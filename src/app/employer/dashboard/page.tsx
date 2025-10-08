@@ -16,10 +16,20 @@ import {
   AlertTriangle
 } from 'lucide-react'
 
+type EmployerSearchResult = {
+  found: boolean
+  candidate: string
+  offers: number
+  notJoined: number
+  lastCompany: string
+  lastDate: string
+  verifiedBy: number
+}
+
 export default function EmployerDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResult, setSearchResult] = useState(null)
+  const [searchResult, setSearchResult] = useState<EmployerSearchResult | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [formData, setFormData] = useState({
     fullName: '',

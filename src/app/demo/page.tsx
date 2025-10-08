@@ -4,9 +4,26 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Search, CheckCircle, AlertTriangle, ArrowRight, Play, Users, Shield, TrendingUp } from 'lucide-react'
 
+type DemoSearchResult = {
+  found: boolean
+  candidate: string
+  uan: string
+  offers: number
+  notJoined: number
+  lastCompany: string
+  lastDate: string
+  verifiedBy: number
+  details: Array<{
+    company: string
+    position: string
+    status: string
+    date: string
+  }>
+}
+
 export default function DemoPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResult, setSearchResult] = useState(null)
+  const [searchResult, setSearchResult] = useState<DemoSearchResult | null>(null)
   const [isSearching, setIsSearching] = useState(false)
 
   const handleDemoSearch = () => {
