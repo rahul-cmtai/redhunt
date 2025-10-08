@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, ArrowRight } from 'lucide-react'
 
 export default function EmployerLogin() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
@@ -15,8 +17,8 @@ export default function EmployerLogin() {
     e.preventDefault()
     // Demo credentials check
     if (formData.email === 'demo@company.com' && formData.password === 'demo123') {
-      alert('Login successful! Redirecting to dashboard...')
-      // In a real app, you would redirect to /employer/dashboard
+      // In a real app, set auth state/cookie before redirect
+      router.push('/employer/dashboard')
     } else {
       alert('Invalid credentials. Use demo@company.com / demo123 for demo access.')
     }

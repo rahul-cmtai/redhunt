@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, ArrowRight, Shield } from 'lucide-react'
 
 export default function AdminLogin() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     username: '',
@@ -15,8 +17,8 @@ export default function AdminLogin() {
     e.preventDefault()
     // Demo credentials check
     if (formData.username === 'admin' && formData.password === 'admin123') {
-      alert('Admin login successful! Redirecting to admin dashboard...')
-      // In a real app, you would redirect to /admin/dashboard
+      // In a real app, set auth state/cookie before redirect
+      router.push('/admin/dashboard')
     } else {
       alert('Invalid credentials. Use admin / admin123 for demo access.')
     }
