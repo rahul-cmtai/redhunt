@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint"
   },
+  
   "dependencies": {
     "@headlessui/react": "^2.2.9",
     "@lottiefiles/dotlottie-react": "^0.17.4",
