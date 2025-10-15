@@ -3,7 +3,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Eye, EyeOff, ArrowRight } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react'
+import axios from 'axios'
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 export default function EmployerLogin() {
   const router = useRouter()
@@ -12,15 +15,43 @@ export default function EmployerLogin() {
     email: '',
     password: ''
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Demo credentials check
-    if (formData.email === 'demo@company.com' && formData.password === 'demo123') {
-      // In a real app, set auth state/cookie before redirect
+    setError(null)
+    setIsSubmitting(true)
+    try {
+      const { data } = await axios.post(
+        `${API_BASE_URL}/api/auth/employer/login`,
+        { email: formData.email.trim(), password: formData.password },
+        { headers: { 'Content-Type': 'application/json' } }
+      )
+      
+      // Store the authentication token (handle different possible field names)
+      const token = data.token || data.accessToken || data.access_token
+      if (token) {
+        localStorage.setItem('employerToken', token)
+        sessionStorage.setItem('employerToken', token)
+      }
+      
+      // Store employer info if provided
+      if (data.employer || data.user) {
+        localStorage.setItem('employerInfo', JSON.stringify(data.employer || data.user))
+      }
+      
       router.push('/employer/dashboard')
-    } else {
-      alert('Invalid credentials. Use demo@company.com / demo123 for demo access.')
+      return data
+    } catch (err: any) {
+      if (err?.code === 'ECONNREFUSED' || err?.message?.includes('Network Error')) {
+        setError('Unable to connect to server. Please check if the API server is running on port 5000.')
+      } else {
+        const message = err?.response?.data?.message || err?.message || 'Login failed'
+        setError(message)
+      }
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -42,6 +73,11 @@ export default function EmployerLogin() {
 
         {/* Login Form */}
         <div className="bg-white py-8 px-6 shadow-lg rounded-lg">
+          {error && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -113,9 +149,16 @@ export default function EmployerLogin() {
             <div>
               <button
                 type="submit"
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                disabled={isSubmitting}
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-70"
               >
-                Sign in
+                {isSubmitting ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Signing in...
+                  </span>
+                ) : (
+                  'Sign in'
+                )}
               </button>
             </div>
           </form>
@@ -141,14 +184,7 @@ export default function EmployerLogin() {
           </div>
         </div>
 
-        {/* Demo Credentials */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="text-sm font-semibold text-blue-800 mb-2">Demo Credentials</h4>
-          <div className="text-sm text-blue-700">
-            <p><strong>Email:</strong> demo@company.com</p>
-            <p><strong>Password:</strong> demo123</p>
-          </div>
-        </div>
+        
 
         {/* Trust Messages */}
         <div className="text-center">

@@ -3,6 +3,101 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* Brand palette (Red) */
+  --brand-50: #fef2f2;
+  --brand-100: #fee2e2;
+  --brand: #ef4444;
+  --brand-600: #dc2626; /* primary */
+  --brand-700: #b91c1c; /* primary hover */
+  
+  /* Blue palette */
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --blue-600: #2563eb;
+  
+  /* Green palette */
+  --green-50: #f0fdf4;
+  --green-100: #dcfce7;
+  --green-600: #16a34a;
+  
+  /* Purple palette */
+  --purple-50: #faf5ff;
+  --purple-100: #f3e8ff;
+  --purple-600: #9333ea;
+  
+  /* Yellow palette */
+  --yellow-50: #fefce8;
+  --yellow-100: #fef3c7;
+  --yellow-600: #ca8a04;
+  
+  /* Indigo palette */
+  --indigo-50: #eef2ff;
+  --indigo-100: #e0e7ff;
+  --indigo-600: #4f46e5;
+  
+  /* Orange palette */
+  --orange-100: #ffedd5;
+  --orange-600: #ea580c;
+  
+  /* Pink palette */
+  --pink-100: #fce7f3;
+  --pink-600: #db2777;
+  
+  /* Teal palette */
+  --teal-100: #ccfbf1;
+  --teal-500: #14b8a6;
+  --teal-600: #0d9488;
+  
+  /* Red palette */
+  --red-100: #fee2e2;
+  --red-600: #dc2626;
+  
+  /* Violet palette */
+  --violet-100: #ede9fe;
+  --violet-600: #7c3aed;
+  
+  /* Emerald palette */
+  --emerald-500: #10b981;
+  --emerald-600: #059669;
+  
+  /* Cyan palette */
+  --cyan-300: #67e8f9;
+  --cyan-500: #06b6d4;
+  
+  /* Gray palette */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-900: #111827;
+  
+  /* Additional shades */
+  --blue-500: #3b82f6;
+  --blue-900: #1e3a8a;
+  --green-500: #22c55e;
+  --purple-400: #c084fc;
+  --purple-500: #a855f7;
+  --purple-900: #581c87;
+  --pink-300: #f9a8d4;
+  --pink-400: #f472b6;
+  --pink-500: #ec4899;
+  --pink-900: #831843;
+  --yellow-300: #fde047;
+  --yellow-400: #facc15;
+  --orange-500: #f97316;
+  --indigo-900: #312e81;
+  --red-300: #fca5a5;
+  --red-400: #f87171;
+  --red-500: #ef4444;
+  --red-600: #dc2626;
+  --red-700: #b91c1c;
+  
+  /* Semantic tokens */
+  --text: #171717;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
+  --surface: #ffffff;
 }
 
 @theme inline {
@@ -16,6 +111,12 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --text: #ededed;
+    --text-muted: #9ca3af;
+    --border: #1f2937;
+    --surface: #0f1115;
+    --brand-600: #ef4444;
+    --brand-700: #dc2626;
   }
 }
 
@@ -23,4 +124,134 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Global color utilities */
+.text-brand { color: var(--brand-600) !important; }
+.text-brand-hover:hover { color: var(--brand-600); }
+.bg-brand { background-color: var(--brand-600) !important; }
+.bg-brand-hover:hover { background-color: var(--brand-700); }
+.bg-brand-50 { background-color: var(--brand-50) !important; }
+.bg-brand-100 { background-color: var(--brand-100) !important; }
+.bg-brand-700 { background-color: var(--brand-700) !important; }
+.border-brand { border-color: var(--brand-600) !important; }
+.text-muted { color: var(--text-muted); }
+
+/* Blue utilities */
+.text-blue-600 { color: var(--blue-600) !important; }
+.bg-blue-50 { background-color: var(--blue-50) !important; }
+.bg-blue-100 { background-color: var(--blue-100) !important; }
+
+/* Green utilities */
+.text-green-600 { color: var(--green-600) !important; }
+.bg-green-50 { background-color: var(--green-50) !important; }
+.bg-green-100 { background-color: var(--green-100) !important; }
+
+/* Purple utilities */
+.text-purple-600 { color: var(--purple-600) !important; }
+.bg-purple-50 { background-color: var(--purple-50) !important; }
+.bg-purple-100 { background-color: var(--purple-100) !important; }
+
+/* Yellow utilities */
+.text-yellow-600 { color: var(--yellow-600) !important; }
+.bg-yellow-50 { background-color: var(--yellow-50) !important; }
+.bg-yellow-100 { background-color: var(--yellow-100) !important; }
+
+/* Indigo utilities */
+.text-indigo-600 { color: var(--indigo-600) !important; }
+.bg-indigo-50 { background-color: var(--indigo-50) !important; }
+.bg-indigo-100 { background-color: var(--indigo-100) !important; }
+
+/* Orange utilities */
+.text-orange-600 { color: var(--orange-600) !important; }
+.bg-orange-100 { background-color: var(--orange-100) !important; }
+
+/* Pink utilities */
+.text-pink-600 { color: var(--pink-600) !important; }
+.bg-pink-100 { background-color: var(--pink-100) !important; }
+
+/* Teal utilities */
+.text-teal-600 { color: var(--teal-600) !important; }
+.bg-teal-100 { background-color: var(--teal-100) !important; }
+
+/* Red utilities */
+.text-red-600 { color: var(--red-600) !important; }
+.bg-red-100 { background-color: var(--red-100) !important; }
+
+/* Violet utilities */
+.text-violet-600 { color: var(--violet-600) !important; }
+.bg-violet-100 { background-color: var(--violet-100) !important; }
+
+/* Gray utilities */
+.text-gray-600 { color: var(--gray-600) !important; }
+.text-gray-700 { color: var(--gray-700) !important; }
+.text-gray-900 { color: var(--gray-900) !important; }
+.bg-gray-50 { background-color: var(--gray-50) !important; }
+.bg-gray-100 { background-color: var(--gray-100) !important; }
+
+/* Additional color utilities */
+.text-yellow-300 { color: var(--yellow-300) !important; }
+.text-yellow-400 { color: var(--yellow-400) !important; }
+.text-red-300 { color: var(--red-300) !important; }
+.text-red-400 { color: var(--red-400) !important; }
+.text-cyan-300 { color: var(--cyan-300) !important; }
+.text-white { color: #ffffff !important; }
+.bg-white { background-color: #ffffff !important; }
+
+/* Gradient utilities - using CSS variables */
+.from-brand { --gradient-from: var(--brand-600); }
+.from-brand-700 { --gradient-from: var(--brand-700); }
+.from-gray-900 { --gradient-from: var(--gray-900); }
+.from-purple-900 { --gradient-from: var(--purple-900); }
+.from-blue-900 { --gradient-from: var(--blue-900); }
+.from-indigo-900 { --gradient-from: var(--indigo-900); }
+.from-pink-900 { --gradient-from: var(--pink-900); }
+
+.via-brand { --gradient-via: var(--brand-600); }
+.via-brand-700 { --gradient-via: var(--brand-700); }
+.via-purple-900 { --gradient-via: var(--purple-900); }
+
+.to-gray-900 { --gradient-to: var(--gray-900); }
+.to-blue-900 { --gradient-to: var(--blue-900); }
+.to-pink-900 { --gradient-to: var(--pink-900); }
+
+/* Gradient backgrounds for stats cards */
+.gradient-red-pink { background: linear-gradient(to bottom right, var(--red-500), var(--pink-500)); }
+.gradient-blue-cyan { background: linear-gradient(to bottom right, var(--blue-500), var(--cyan-500)); }
+.gradient-green-emerald { background: linear-gradient(to bottom right, var(--green-500), var(--emerald-500)); }
+.gradient-yellow-orange { background: linear-gradient(to bottom right, var(--yellow-400), var(--orange-500)); }
+.gradient-purple-pink { background: linear-gradient(to bottom right, var(--purple-400), var(--pink-500)); }
+
+/* Buttons */
+.btn-brand {
+  background-color: var(--brand-600);
+  color: #fff;
+}
+.btn-brand:hover { background-color: var(--brand-700); }
+
+/* Marquee Animations - Smooth & Continuous */
+@keyframes marquee-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-150%);
+  }
+}
+
+@keyframes marquee-right {
+  0% {
+    transform: translateX(-150%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-marquee-left {
+  animation: marquee-left 40s linear infinite;
+}
+
+.animate-marquee-right {
+  animation: marquee-right 40s linear infinite;
 }
