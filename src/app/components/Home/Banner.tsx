@@ -11,7 +11,18 @@ export default function Banner() {
   const isInView = useInView(ref, { once: true, amount: 0.3 })
 
   return (
-    <section className="py-20 bg-gradient-to-br from-red-600 via-red-500 to-red-700 relative overflow-hidden">
+    <section className="py-20 relative overflow-hidden group">
+      {/* Background Image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: 'url("https://images.unsplash.com/photo-1521791055366-0d553872125f?q=80&w=1920&auto=format&fit=crop")'
+        }}
+      />
+      {/* Soft White Overlay (improves text contrast) */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/90 via-white/85 to-white/75" />
+      {/* Light Red Tint (hover strengthens to brand red) */}
+      <div className="absolute inset-0 bg-gradient-to-br from-red-500/15 via-red-500/10 to-red-600/15 opacity-100 group-hover:opacity-35 transition-opacity duration-500" />
       {/* Animated Background Elements */}
       <motion.div
         className="absolute inset-0 opacity-10"
@@ -86,7 +97,7 @@ export default function Banner() {
         transition={{ duration: 0.8, staggerChildren: 0.15, delayChildren: 0.2 }}
       >
         <motion.h2 
-          className="text-3xl md:text-5xl font-bold text-white mb-6"
+          className="text-3xl md:text-5xl font-bold text-red-600 mb-6"
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
           transition={{ duration: 0.6 }}
@@ -109,7 +120,7 @@ export default function Banner() {
         </motion.h2>
 
         <motion.p 
-          className="text-xl text-red-100 mb-8 max-w-2xl mx-auto"
+          className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto"
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
           transition={{ duration: 0.6, delay: 0.2 }}
@@ -157,8 +168,8 @@ export default function Banner() {
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
     <Link 
-      href="/demo" 
-              className="relative border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white/10 transition-colors inline-flex items-center justify-center group overflow-hidden shadow-xl"
+      href="/contact" 
+              className="relative border-2 border-white text-red-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white/10 transition-colors inline-flex items-center justify-center group overflow-hidden shadow-xl"
             >
               <motion.span
                 className="absolute inset-0 bg-white/20"
@@ -172,7 +183,7 @@ export default function Banner() {
         </motion.div>
         
         <motion.div 
-          className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-red-100"
+          className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-gray-800"
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
           transition={{ duration: 0.6, delay: 0.6 }}

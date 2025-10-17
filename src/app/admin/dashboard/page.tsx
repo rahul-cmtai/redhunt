@@ -59,6 +59,18 @@ interface Candidate {
   updatedAt?: string
 }
 
+interface CandidateUser {
+  _id?: string
+  id?: string
+  name?: string
+  email: string
+  mobile?: string
+  uan?: string
+  pan?: string
+  status: string
+  createdAt?: string
+}
+
 interface DashboardStat {
   title: string
   value: string
@@ -95,6 +107,8 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterEmployer, setFilterEmployer] = useState('all') // stores employerId or 'all'
+  const [candidateUsers, setCandidateUsers] = useState<CandidateUser[]>([])
+  const [candidateUsersLoading, setCandidateUsersLoading] = useState(false)
   
   // Data states
   const [dashboardStats, setDashboardStats] = useState<DashboardStat[]>([
@@ -181,6 +195,36 @@ export default function AdminDashboard() {
       }
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchCandidateUsers = async () => {
+    try {
+      setCandidateUsersLoading(true)
+      const token = getAuthToken()
+      if (!token) {
+        setError('No authentication token found. Please login again.')
+        return
+      }
+      const { data } = await axios.get(`${API_BASE_URL}/api/admin/candidate-users`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setCandidateUsers(data || [])
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        setError('Session expired. Please login again.')
+        localStorage.removeItem('adminToken')
+        sessionStorage.removeItem('adminToken')
+        setTimeout(() => {
+          window.location.href = '/admin/login'
+        }, 2000)
+      } else if (err.code === 'ECONNREFUSED' || err.message?.includes('Network Error')) {
+        setError('Unable to connect to server. Please check if the API server is running.')
+      } else {
+        setError('Failed to fetch candidate users')
+      }
+    } finally {
+      setCandidateUsersLoading(false)
     }
   }
 
@@ -369,6 +413,58 @@ export default function AdminDashboard() {
     }
   }
 
+  const approveCandidateUser = async (candidateUserId: string) => {
+    try {
+      const token = getAuthToken()
+      await axios.patch(`${API_BASE_URL}/api/admin/candidate-users/${candidateUserId}/approve`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      fetchCandidateUsers()
+    } catch (err) {
+      setError('Failed to approve candidate user')
+      console.error('Approve candidate user error:', err)
+    }
+  }
+
+  const rejectCandidateUser = async (candidateUserId: string) => {
+    try {
+      const token = getAuthToken()
+      await axios.patch(`${API_BASE_URL}/api/admin/candidate-users/${candidateUserId}/reject`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      fetchCandidateUsers()
+    } catch (err) {
+      setError('Failed to reject candidate user')
+      console.error('Reject candidate user error:', err)
+    }
+  }
+
+  const suspendCandidateUser = async (candidateUserId: string) => {
+    try {
+      const token = getAuthToken()
+      await axios.patch(`${API_BASE_URL}/api/admin/candidate-users/${candidateUserId}/suspend`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      fetchCandidateUsers()
+    } catch (err) {
+      setError('Failed to suspend candidate user')
+      console.error('Suspend candidate user error:', err)
+    }
+  }
+
+  const unsuspendCandidateUser = async (candidateUserId: string) => {
+    try {
+      const token = getAuthToken()
+      await axios.patch(`${API_BASE_URL}/api/admin/candidate-users/${candidateUserId}/unsuspend`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      fetchCandidateUsers()
+    } catch (err) {
+      setError('Failed to unsuspend candidate user')
+      console.error('Unsuspend candidate user error:', err)
+    }
+  }
+
   const suspendEmployer = async (employerId: string) => {
     try {
       const token = getAuthToken()
@@ -406,6 +502,7 @@ export default function AdminDashboard() {
     fetchCandidates()
     fetchMetrics()
     fetchReports()
+    fetchCandidateUsers()
   }, [])
 
   // Refetch candidates when employer filter or search changes on Candidates tab
@@ -484,6 +581,7 @@ export default function AdminDashboard() {
                 { id: 'employers', label: 'Employers' },
                 // { id: 'approved-employers', label: 'Approved Employers' },
                 { id: 'candidates', label: 'Candidates' },
+                { id: 'candidate-users', label: 'Candidate Users' },
                 { id: 'reports', label: 'Reports' },
                 { id: 'notifications', label: 'Notifications' }
               ].map((tab) => (
@@ -1030,6 +1128,113 @@ export default function AdminDashboard() {
                 </div>
                 <div className="text-sm text-gray-600">Pending</div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Candidate Users Tab */}
+        {activeTab === 'candidate-users' && (
+          <div>
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Candidate Users</h2>
+              <p className="text-gray-600">Manage candidate account approvals and status.</p>
+            </div>
+
+            {error && (
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            {candidateUsersLoading && (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-red-600" />
+                <span className="ml-2 text-gray-600">Loading candidate users...</span>
+              </div>
+            )}
+
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UAN</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PAN</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {candidateUsers.map((u) => (
+                    <tr key={u._id || u.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.name || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.uan || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.pan || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          (u.status || '').toLowerCase() === 'approved'
+                            ? 'bg-green-100 text-green-800'
+                            : (u.status || '').toLowerCase() === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : (u.status || '').toLowerCase() === 'suspended'
+                            ? 'bg-orange-100 text-orange-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {(u.status || '').charAt(0).toUpperCase() + (u.status || '').slice(1)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          {(u.status || '').toLowerCase() === 'pending' && (u._id || u.id) && (
+                            <>
+                              <button
+                                onClick={() => approveCandidateUser(u._id || u.id!)}
+                                className="text-green-600 hover:text-green-900"
+                                title="Approve"
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => rejectCandidateUser(u._id || u.id!)}
+                                className="text-red-600 hover:text-red-900"
+                                title="Reject"
+                              >
+                                <Ban className="h-4 w-4" />
+                              </button>
+                            </>
+                          )}
+                          {(u.status || '').toLowerCase() === 'approved' && (u._id || u.id) && (
+                            <button
+                              onClick={() => suspendCandidateUser(u._id || u.id!)}
+                              className="text-orange-600 hover:text-orange-900"
+                              title="Suspend"
+                            >
+                              <Ban className="h-4 w-4" />
+                            </button>
+                          )}
+                          {(u.status || '').toLowerCase() === 'suspended' && (u._id || u.id) && (
+                            <button
+                              onClick={() => unsuspendCandidateUser(u._id || u.id!)}
+                              className="text-green-600 hover:text-green-900"
+                              title="Unsuspend"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {candidateUsers.length === 0 && !candidateUsersLoading && (
+                <div className="text-center py-8 text-gray-500">No candidate users found</div>
+              )}
             </div>
           </div>
         )}

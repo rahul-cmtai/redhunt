@@ -151,9 +151,14 @@ export default function EmployerDashboard() {
         return
       }
 
+      // Normalize UAN-like queries to uppercase (emails/phones remain unchanged)
+      const rawQuery = searchQuery.trim()
+      const isUanLike = /^uan[-\s]?\d+$/i.test(rawQuery)
+      const normalizedQuery = isUanLike ? rawQuery.toUpperCase() : rawQuery
+
       // Use the dedicated search endpoint
       const { data } = await axios.get(`${API_BASE_URL}/api/employer/candidates/search`, {
-        params: { q: searchQuery.trim() },
+        params: { q: normalizedQuery },
         headers: { Authorization: `Bearer ${token}` }
       })
 
@@ -221,7 +226,7 @@ export default function EmployerDashboard() {
 
       const payload = {
         name: formData.fullName.trim(),
-        uan: formData.uan?.trim() || undefined,
+        uan: formData.uan?.trim().toUpperCase() || undefined,
         email: formData.email.trim(),
         mobile: formData.phone?.trim() || undefined,
         position: formData.jobRole.trim(),
@@ -605,7 +610,6 @@ export default function EmployerDashboard() {
               {[
                 { id: 'dashboard', label: 'Dashboard' },
                 { id: 'add', label: 'Add Candidate' },
-                { id: 'bulk', label: 'Bulk Upload' },
                 { id: 'search', label: 'Verify Candidate' },
                 { id: 'reports', label: 'Reports' },
                 { id: 'profile', label: 'Company Profile' }
@@ -670,13 +674,7 @@ export default function EmployerDashboard() {
                     <Search className="h-5 w-5 mr-2" />
                     Verify Candidate
                   </button>
-                  <button 
-                    onClick={() => setActiveTab('bulk')}
-                    className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                  >
-                    <FileText className="h-5 w-5 mr-2" />
-                    Bulk Upload CSV
-                  </button>
+                  {/* Bulk Upload removed */}
                 </div>
               </div>
 
@@ -738,7 +736,7 @@ export default function EmployerDashboard() {
                     <input
                       type="text"
                       value={formData.uan}
-                      onChange={(e) => setFormData({...formData, uan: e.target.value})}
+                      onChange={(e) => setFormData({...formData, uan: e.target.value.toUpperCase()})}
                       placeholder="e.g. UAN-854392"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                       required
@@ -891,258 +889,7 @@ export default function EmployerDashboard() {
           </div>
         )}
 
-        {/* Bulk Upload Tab */}
-        {activeTab === 'bulk' && (
-          <div>
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Bulk Upload Candidates</h2>
-              <p className="text-gray-600">Upload a CSV file to add multiple candidates at once.</p>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              {message && (
-                <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">{message}</div>
-              )}
-              {error && (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
-              )}
-
-              {!showCsvMapping && mappedData.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="mb-4">
-                    <FileText className="h-12 w-12 text-gray-400 mx-auto" />
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Upload CSV File</h3>
-                  <p className="text-gray-600 mb-6">Select a CSV file with candidate data to get started.</p>
-                  
-                  <div className="relative inline-block">
-                    <input
-                      type="file"
-                      accept=".csv"
-                      title="Upload CSV"
-                      className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file) handleFileUpload(file)
-                        e.currentTarget.value = ''
-                      }}
-                    />
-                    <div className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 cursor-pointer">
-                      Choose CSV File
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6 text-sm text-gray-500">
-                    <p className="mb-2">CSV should contain columns like:</p>
-                    <p>Name, Email, Phone, Job Role, Offer Date, Offer Status, etc.</p>
-                    <button
-                      onClick={() => {
-                        const csvContent = "Name,Email,Phone,Job Role,Offer Date,Offer Status,Joining Date,Reason,Notes\nJohn Doe,john@example.com,+91 98765 43210,Software Engineer,2024-01-15,Accepted,2024-02-01,,Great candidate\nJane Smith,jane@example.com,+91 98765 43211,Data Analyst,2024-01-20,Not Joined,,Accepted another offer,Good technical skills"
-                        const blob = new Blob([csvContent], { type: 'text/csv' })
-                        const url = window.URL.createObjectURL(blob)
-                        const a = document.createElement('a')
-                        a.href = url
-                        a.download = 'candidate_template.csv'
-                        a.click()
-                        window.URL.revokeObjectURL(url)
-                      }}
-                      className="mt-2 text-red-600 hover:text-red-700 underline"
-                    >
-                      Download CSV Template
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {showCsvMapping && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Map CSV Columns to Form Fields</h3>
-                  <p className="text-gray-600 mb-6">Match your CSV columns to the appropriate form fields.</p>
-                  
-                  {/* CSV Preview */}
-                  <div className="mb-6">
-                    <h4 className="text-md font-medium text-gray-900 mb-2">CSV Preview (First 3 rows):</h4>
-                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            {csvHeaders.map((header, index) => (
-                              <th key={index} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                {header}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {csvData.slice(0, 3).map((row, rowIndex) => (
-                            <tr key={rowIndex}>
-                              {csvHeaders.map((header, colIndex) => (
-                                <td key={colIndex} className="px-3 py-2 text-sm text-gray-900">
-                                  {row[header] || '-'}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    {csvHeaders.map((header, index) => (
-                      <div key={index} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
-                        <div className="flex-1">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            CSV Column: <span className="font-bold">{header}</span>
-                          </label>
-                          <select
-                            value={fieldMapping[header] || ''}
-                            onChange={(e) => setFieldMapping({...fieldMapping, [header]: e.target.value})}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                          >
-                            <option value="">-- Select Form Field --</option>
-                            <option value="fullName">Full Name *</option>
-                            <option value="uan">UAN / Unique ID</option>
-                            <option value="email">Email *</option>
-                            <option value="phone">Phone</option>
-                            <option value="jobRole">Job Role / Department</option>
-                            <option value="offerDate">Offer Date</option>
-                            <option value="offerStatus">Offer Status</option>
-                            <option value="joiningDate">Joining Date</option>
-                            <option value="reason">Reason for Not Joining</option>
-                            <option value="notes">Notes</option>
-                          </select>
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {csvData.length} rows
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Mapping Status */}
-                  <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Mapping Status:</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                      {['fullName', 'email'].map(field => {
-                        const isMapped = Object.values(fieldMapping).includes(field)
-                        return (
-                          <div key={field} className={`flex items-center ${isMapped ? 'text-green-600' : 'text-red-600'}`}>
-                            <span className={`w-2 h-2 rounded-full mr-2 ${isMapped ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                            {field === 'fullName' ? 'Full Name' : 'Email'} {isMapped ? '✓' : '✗'}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6 flex space-x-4">
-                    <button
-                      onClick={applyMapping}
-                      className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700"
-                    >
-                      Apply Mapping
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowCsvMapping(false)
-                        setCsvData([])
-                        setCsvHeaders([])
-                        setFieldMapping({})
-                      }}
-                      className="text-gray-500 px-6 py-2"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {mappedData.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Review Mapped Data</h3>
-                  <p className="text-gray-600 mb-6">Review the mapped data before submitting. Total records: {mappedData.length}</p>
-                  
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Role</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Offer Date</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UAN</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {mappedData.slice(0, 10).map((row, index) => (
-                          <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.fullName || '-'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.email || '-'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.phone || '-'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.jobRole || '-'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.offerDate || '-'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.offerStatus || '-'}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.uan || '-'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  
-                  {mappedData.length > 10 && (
-                    <p className="mt-4 text-sm text-gray-600">
-                      Showing first 10 of {mappedData.length} records
-                    </p>
-                  )}
-                  
-                  {/* Show mapping summary */}
-                  <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                    <h4 className="text-sm font-medium text-blue-900 mb-2">Mapping Summary:</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-blue-800">
-                      {Object.keys(fieldMapping).map(csvField => (
-                        <div key={csvField} className="flex justify-between">
-                          <span>{csvField}:</span>
-                          <span className="font-medium">{fieldMapping[csvField]}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6 flex space-x-4">
-                    <button
-                      onClick={submitBulkData}
-                      disabled={submitting}
-                      className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 disabled:opacity-70"
-                    >
-                      {submitting ? 'Adding Candidates...' : `Add ${mappedData.length} Candidates`}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setMappedData([])
-                        setCsvData([])
-                        setCsvHeaders([])
-                        setFieldMapping({})
-                        setShowCsvMapping(false)
-                      }}
-                      className="text-gray-500 px-6 py-2"
-                    >
-                      Start Over
-                    </button>
-                    <button
-                      onClick={() => setShowCsvMapping(true)}
-                      className="text-blue-600 px-6 py-2 border border-blue-600 rounded-lg hover:bg-blue-50"
-                    >
-                      Edit Mapping
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {/* Bulk Upload removed */}
 
         {/* Search/Verify Tab */}
         {activeTab === 'search' && (

@@ -8,12 +8,54 @@ import axios from 'axios'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
+// Block common free email providers to enforce corporate/work emails
+const FREE_EMAIL_DOMAINS = new Set([
+  'gmail.com',
+  'googlemail.com',
+  'yahoo.com',
+  'yahoo.co.in',
+  'outlook.com',
+  'hotmail.com',
+  'live.com',
+  'msn.com',
+  'icloud.com',
+  'me.com',
+  'aol.com',
+  'proton.me',
+  'protonmail.com',
+  'yandex.com',
+  'zoho.com',
+  'gmx.com',
+  'mail.com',
+  'inbox.com',
+  'rediffmail.com',
+  'qq.com',
+  '163.com',
+  'hey.com',
+  'duck.com'
+])
+
+function isCorporateEmail(email: string): boolean {
+  const trimmed = email.trim()
+  const atIndex = trimmed.lastIndexOf('@')
+  if (atIndex === -1) return false
+  const domain = trimmed.slice(atIndex + 1).toLowerCase()
+  if (!domain) return false
+  if (FREE_EMAIL_DOMAINS.has(domain)) return false
+  // Basic domain shape like company.com or sub.company.co.in
+  const domainLooksValid = /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)
+  return domainLooksValid
+}
+
 export default function EmployerRegister() {
   const router = useRouter()
 
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isOtpStep, setIsOtpStep] = useState(false)
+  const [otp, setOtp] = useState('')
+  const [isResending, setIsResending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -35,6 +77,7 @@ export default function EmployerRegister() {
     if (!formData.contactNumber.trim()) return 'Contact number is required'
     if (!/^[0-9+\-()\s]{7,20}$/.test(formData.contactNumber.trim())) return 'Enter a valid contact number'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) return 'Enter a valid email'
+    if (!isCorporateEmail(formData.email)) return 'Please use your corporate work email (e.g., name@yourcompany.com)'
     if (!formData.companyCode.trim()) return 'Company code is required'
     if (formData.password.length < 6) return 'Password must be at least 6 characters'
     if (formData.password !== formData.confirmPassword) return 'Passwords do not match'
@@ -72,49 +115,70 @@ export default function EmployerRegister() {
         },
         { headers: { 'Content-Type': 'application/json' } }
       )
-      // Try to get a token from registration response or via login
-      let token = (data && (data.token || data.accessToken)) as string | undefined
-      if (!token) {
-        try {
-          const loginRes = await axios.post(
-            `${API_BASE_URL}/api/auth/employer/login`,
-            { email: formData.email.trim(), password: formData.password },
-            { headers: { 'Content-Type': 'application/json' } }
-          )
-          token = loginRes?.data?.token || loginRes?.data?.accessToken
-        } catch (e) {
-          // proceed without profile auto-fill if login fails silently
-        }
-      }
-
-      // If we have a token, immediately persist the profile details
-      if (token) {
-        try {
-          await axios.put(
-            `${API_BASE_URL}/api/employer/profile`,
-            {
-              companyName: formData.companyName.trim(),
-              industry: formData.industry.trim(),
-              hrName: formData.hrName.trim(),
-              contactNumber: formData.contactNumber.trim(),
-              email: formData.email.trim(),
-              companyCode: formData.companyCode.trim()
-            },
-            { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }
-          )
-        } catch (e) {
-          // If profile update fails, still consider registration successful
-        }
-      }
-
-      setSuccess('Account created successfully.')
-      setTimeout(() => router.push('/employer/login'), 1200)
+      // Move to OTP step after successful registration
+      setIsOtpStep(true)
+      setSuccess('Account created. We sent a 6-digit OTP to your work email.')
       return data
     } catch (err: any) {
       const message = err?.response?.data?.message || err?.message || 'Registration failed'
       setError(message)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setSuccess(null)
+    if (!otp || otp.trim().length < 4) {
+      setError('Enter the OTP sent to your email')
+      return
+    }
+    setIsSubmitting(true)
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/api/auth/verify-email`,
+        { role: 'employer', email: formData.email.trim(), otp: otp.trim() },
+        { headers: { 'Content-Type': 'application/json' } }
+      )
+      if (res?.data?.emailVerified) {
+        setSuccess('Email verified successfully. Redirecting to login...')
+        setTimeout(() => router.push('/employer/login'), 1200)
+      } else {
+        setError('Verification failed. Please check the OTP and try again.')
+      }
+    } catch (err: any) {
+      const message = err?.response?.data?.message || err?.message || 'OTP verification failed'
+      setError(message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleResendOtp = async () => {
+    setError(null)
+    setSuccess(null)
+    setIsResending(true)
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/api/auth/resend-otp`,
+        { role: 'employer', email: formData.email.trim() },
+        { headers: { 'Content-Type': 'application/json' } }
+      )
+      if (res?.data?.emailVerified) {
+        setSuccess('Email already verified. Redirecting to login...')
+        setTimeout(() => router.push('/employer/login'), 1000)
+      } else if (res?.data?.sent) {
+        setSuccess('OTP resent. Please check your inbox (and spam).')
+      } else {
+        setSuccess('If the email exists, a new OTP has been sent.')
+      }
+    } catch (err: any) {
+      const message = err?.response?.data?.message || err?.message || 'Failed to resend OTP'
+      setError(message)
+    } finally {
+      setIsResending(false)
     }
   }
 
@@ -134,7 +198,7 @@ export default function EmployerRegister() {
           </p>
         </div>
 
-        {/* Register Form */}
+        {/* Register / OTP Form */}
         <div className="bg-white py-8 px-6 shadow-lg rounded-lg">
           {error && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -148,6 +212,7 @@ export default function EmployerRegister() {
             </div>
           )}
 
+          {!isOtpStep ? (
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
@@ -323,6 +388,53 @@ export default function EmployerRegister() {
               </button>
             </div>
           </form>
+          ) : (
+          <form className="space-y-6" onSubmit={handleVerifyOtp}>
+            <div>
+              <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
+                Enter OTP
+              </label>
+              <input
+                id="otp"
+                name="otp"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]{4,6}"
+                placeholder="6-digit code"
+                required
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm tracking-widest"
+              />
+              <p className="mt-2 text-xs text-gray-500">We sent the code to {formData.email}.</p>
+            </div>
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={isResending}
+                className="text-sm text-red-600 hover:text-red-700 disabled:opacity-70"
+              >
+                {isResending ? 'Resending…' : 'Resend OTP'}
+              </button>
+            </div>
+            <div>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-70"
+              >
+                {isSubmitting ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Verifying...
+                  </span>
+                ) : (
+                  'Verify Email'
+                )}
+              </button>
+            </div>
+          </form>
+          )}
 
           <div className="mt-6">
             <div className="relative">

@@ -7,8 +7,20 @@ import { motion } from 'framer-motion'
 
 export default function Hero() {
   return (
-    <section className="bg-gradient-to-br from-brand-50 via-white to-blue-50 py-20 lg:py-32">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative group overflow-hidden bg-gradient-to-br from-brand-50 via-white to-blue-50 py-20 lg:py-32">
+      {/* Background Image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: 'url("https://images.unsplash.com/photo-1521791055366-0d553872125f?q=80&w=1920&auto=format&fit=crop")'
+        }}
+      />
+      {/* Base Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/85 via-white/80 to-white/70" />
+      {/* Hover Tint Overlay (red) */}
+      <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-red-500" />
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Side - Text and Buttons */}
           <div className="space-y-8">
