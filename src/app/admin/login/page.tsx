@@ -54,13 +54,13 @@ export default function AdminLogin() {
             <Shield className="h-12 w-12 text-red-500" />
           </div>
           <Link href="/" className="text-3xl font-bold text-white">
-            RedHunt
+            Red-Flagged
           </Link>
           <h2 className="mt-6 text-3xl font-bold text-white">
             Admin Console
           </h2>
           <p className="mt-2 text-sm text-gray-300">
-            Secure access to RedHunt administration panel
+            Secure access to Red-Flagged administration panel
           </p>
         </div>
 
@@ -85,7 +85,7 @@ export default function AdminLogin() {
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
-                placeholder="admin@redhunt.example"
+                placeholder="admin@red-flagged.example"
               />
             </div>
 

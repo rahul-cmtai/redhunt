@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Home, User2, ChevronDown, UserCircle, Briefcase, Info, Sparkles, Grid3x3, Mail, Menu, X } from 'lucide-react'
+import { Home, User2, ChevronDown, UserCircle, Briefcase, Info, Sparkles, Grid3x3, Mail, Menu, X, Play } from 'lucide-react'
 
 export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -15,7 +15,7 @@ export default function Navbar() {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
-                <h1 className="text-2xl font-bold text-brand">RedHunt</h1>
+                <h1 className="text-2xl font-bold text-brand">Red-Flagged</h1>
               </Link>
             </div>
           </div>
@@ -26,18 +26,24 @@ export default function Navbar() {
               <Home className="text-[#FF3B30] w-5 h-5" />
               Home
             </Link>
+            <Link href="/How-Its-Work" className="flex items-center gap-2 text-gray-700 hover:text-brand px-3 py-2 rounded-md text-sm font-medium transition-colors">
+              <Play className="text-[#FF3B30] w-5 h-5" />
+              How its works
+            </Link>
+
             <Link href="/about" className="flex items-center gap-2 text-gray-700 hover:text-brand px-3 py-2 rounded-md text-sm font-medium transition-colors">
               <Info className="text-[#FF3B30] w-5 h-5" />
               About Us
             </Link>
+
             <Link href="/benefits" className="flex items-center gap-2 text-gray-700 hover:text-brand px-3 py-2 rounded-md text-sm font-medium transition-colors">
               <Sparkles className="text-[#FF3B30] w-5 h-5" />
               Benefits
             </Link>
-            <Link href="/features" className="flex items-center gap-2 text-gray-700 hover:text-brand px-3 py-2 rounded-md text-sm font-medium transition-colors">
+            {/* <Link href="/features" className="flex items-center gap-2 text-gray-700 hover:text-brand px-3 py-2 rounded-md text-sm font-medium transition-colors">
               <Grid3x3 className="text-[#FF3B30] w-5 h-5" />
               Features
-            </Link>
+            </Link> */}
             <Link href="/contact" className="flex items-center gap-2 text-gray-700 hover:text-brand px-3 py-2 rounded-md text-sm font-medium transition-colors">
               <Mail className="text-[#FF3B30] w-5 h-5" />
               Contact Us

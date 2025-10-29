@@ -36,7 +36,7 @@ export default function ComparisonSection() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Traditional Hiring vs RedHunt
+            Traditional Hiring vs Red-Flagged
           </h2>
           <p className="text-xl text-gray-600">See the difference for yourself</p>
         </motion.div>
@@ -94,7 +94,7 @@ export default function ComparisonSection() {
               </motion.div>
             </motion.div>
 
-            {/* RedHunt */}
+            {/* Red-Flagged */}
             <motion.div 
               className="p-8 bg-gradient-to-br from-brand-50 to-white relative overflow-hidden"
               initial={{ opacity: 0, x: 50 }}
@@ -119,7 +119,7 @@ export default function ComparisonSection() {
                 }}
               />
 
-              <h3 className="text-2xl font-bold text-brand mb-6 relative z-10">With RedHunt</h3>
+              <h3 className="text-2xl font-bold text-brand mb-6 relative z-10">With Red-Flagged</h3>
               <ul className="space-y-4 relative z-10">
                 {redHunt.map((item, index) => (
                   <motion.li

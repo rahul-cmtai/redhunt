@@ -18,7 +18,9 @@ import {
   LogOut,
   Bell,
   Loader2,
-  Building2
+  Building2,
+  X,
+  ChevronDown
 } from 'lucide-react'
 import axios from 'axios'
 
@@ -62,13 +64,42 @@ interface Candidate {
 interface CandidateUser {
   _id?: string
   id?: string
+  // Personal Information
   name?: string
-  email: string
-  mobile?: string
-  uan?: string
-  pan?: string
+  fathersName?: string
+  gender?: string
+  dob?: string
+  permanentAddress?: string
+  currentAddress?: string
+  mobileNumber?: string
+  mobile?: string  // For backward compatibility
+  primaryEmail?: string
+  email: string  // For backward compatibility
+  secondaryEmail?: string
+  
+  // Professional Information
+  panNumber?: string
+  pan?: string  // For backward compatibility
+  uanNumber?: string
+  uan?: string  // For backward compatibility
+  highestQualification?: string
+  workExperience?: number
+  sector?: string
+  presentCompany?: string
+  designation?: string
+  latestRating?: string
+  workLocation?: string
+  openToRelocation?: string
+  currentCtc?: string
+  expectedHikePercentage?: string
+  noticePeriod?: string
+  negotiableDays?: string
+  skillSets?: string[]
+  
+  // Account Information
   status: string
   createdAt?: string
+  updatedAt?: string
 }
 
 interface DashboardStat {
@@ -102,6 +133,14 @@ interface Reports {
   rejectionHeatmap?: Record<string, string>
 }
 
+interface Notification {
+  id: string
+  type: 'success' | 'warning' | 'info'
+  message: string
+  time: string
+  timestamp: number
+}
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [searchQuery, setSearchQuery] = useState('')
@@ -109,6 +148,11 @@ export default function AdminDashboard() {
   const [filterEmployer, setFilterEmployer] = useState('all') // stores employerId or 'all'
   const [candidateUsers, setCandidateUsers] = useState<CandidateUser[]>([])
   const [candidateUsersLoading, setCandidateUsersLoading] = useState(false)
+  const [selectedCandidateUser, setSelectedCandidateUser] = useState<CandidateUser | null>(null)
+  const [showCandidateUserModal, setShowCandidateUserModal] = useState(false)
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null)
+  const [openEmployerDropdownId, setOpenEmployerDropdownId] = useState<string | null>(null)
+  const [notifications, setNotifications] = useState<Notification[]>([])
   
   // Data states
   const [dashboardStats, setDashboardStats] = useState<DashboardStat[]>([
@@ -125,16 +169,53 @@ export default function AdminDashboard() {
   const [candidatesLoading, setCandidatesLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // View modal state
+  // View modal state for Employer
   const [selectedEmployer, setSelectedEmployer] = useState<Employer | null>(null)
   const [isViewOpen, setIsViewOpen] = useState(false)
   const openView = (employer: Employer) => { setSelectedEmployer(employer); setIsViewOpen(true) }
   const closeView = () => { setIsViewOpen(false); setSelectedEmployer(null) }
 
+  // View modal state for Candidate
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
+  const [isCandidateViewOpen, setIsCandidateViewOpen] = useState(false)
+  const openCandidateView = (candidate: Candidate) => { setSelectedCandidate(candidate); setIsCandidateViewOpen(true) }
+  const closeCandidateView = () => { setIsCandidateViewOpen(false); setSelectedCandidate(null) }
+
   // Get auth token from localStorage or session
   const getAuthToken = () => {
     return localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken')
   }
+
+  // Add notification function
+  const addNotification = (type: 'success' | 'warning' | 'info', message: string) => {
+    const newNotification: Notification = {
+      id: Date.now().toString(),
+      type,
+      message,
+      time: 'Just now',
+      timestamp: Date.now()
+    }
+    setNotifications(prev => [newNotification, ...prev].slice(0, 50)) // Keep last 50 notifications
+  }
+
+  // Load notifications from localStorage on mount
+  useEffect(() => {
+    const savedNotifications = localStorage.getItem('adminNotifications')
+    if (savedNotifications) {
+      try {
+        setNotifications(JSON.parse(savedNotifications))
+      } catch (e) {
+        console.error('Failed to load notifications', e)
+      }
+    }
+  }, [])
+
+  // Save notifications to localStorage whenever they change
+  useEffect(() => {
+    if (notifications.length > 0) {
+      localStorage.setItem('adminNotifications', JSON.stringify(notifications))
+    }
+  }, [notifications])
 
   // Normalize backend status values to UI filter values
   const normalizeStatus = (status?: string) => {
@@ -172,6 +253,14 @@ export default function AdminDashboard() {
       const { data } = await axios.get(`${API_BASE_URL}/api/admin/employers`, {
         headers: { Authorization: `Bearer ${token}` }
       })
+      
+      // Check for new employers
+      const previousCount = employers.length
+      if (previousCount > 0 && data.length > previousCount) {
+        const newCount = data.length - previousCount
+        addNotification('info', `${newCount} new employer${newCount > 1 ? 's' : ''} registered`)
+      }
+      
       setEmployers(data)
       
       // Update approved employers count
@@ -209,6 +298,14 @@ export default function AdminDashboard() {
       const { data } = await axios.get(`${API_BASE_URL}/api/admin/candidate-users`, {
         headers: { Authorization: `Bearer ${token}` }
       })
+      
+      // Check for new candidate users
+      const previousCount = candidateUsers.length
+      if (previousCount > 0 && data.length > previousCount) {
+        const newCount = data.length - previousCount
+        addNotification('info', `${newCount} new candidate${newCount > 1 ? 's' : ''} registered`)
+      }
+      
       setCandidateUsers(data || [])
     } catch (err: any) {
       if (err.response?.status === 401) {
@@ -390,9 +487,11 @@ export default function AdminDashboard() {
   const approveEmployer = async (employerId: string) => {
     try {
       const token = getAuthToken()
+      const employer = employers.find(e => (e._id || e.id) === employerId)
       await axios.patch(`${API_BASE_URL}/api/admin/employers/${employerId}/approve`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       })
+      addNotification('success', `Employer ${employer?.companyName || employer?.company || 'account'} approved`)
       fetchEmployers()
     } catch (err) {
       setError('Failed to approve employer')
@@ -403,9 +502,11 @@ export default function AdminDashboard() {
   const rejectEmployer = async (employerId: string) => {
     try {
       const token = getAuthToken()
+      const employer = employers.find(e => (e._id || e.id) === employerId)
       await axios.patch(`${API_BASE_URL}/api/admin/employers/${employerId}/reject`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       })
+      addNotification('warning', `Employer ${employer?.companyName || employer?.company || 'account'} rejected`)
       fetchEmployers()
     } catch (err) {
       setError('Failed to reject employer')
@@ -416,9 +517,11 @@ export default function AdminDashboard() {
   const approveCandidateUser = async (candidateUserId: string) => {
     try {
       const token = getAuthToken()
+      const candidate = candidateUsers.find(c => (c._id || c.id) === candidateUserId)
       await axios.patch(`${API_BASE_URL}/api/admin/candidate-users/${candidateUserId}/approve`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       })
+      addNotification('success', `Candidate ${candidate?.name || 'account'} approved`)
       fetchCandidateUsers()
     } catch (err) {
       setError('Failed to approve candidate user')
@@ -429,9 +532,11 @@ export default function AdminDashboard() {
   const rejectCandidateUser = async (candidateUserId: string) => {
     try {
       const token = getAuthToken()
+      const candidate = candidateUsers.find(c => (c._id || c.id) === candidateUserId)
       await axios.patch(`${API_BASE_URL}/api/admin/candidate-users/${candidateUserId}/reject`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       })
+      addNotification('warning', `Candidate ${candidate?.name || 'account'} rejected`)
       fetchCandidateUsers()
     } catch (err) {
       setError('Failed to reject candidate user')
@@ -442,9 +547,11 @@ export default function AdminDashboard() {
   const suspendCandidateUser = async (candidateUserId: string) => {
     try {
       const token = getAuthToken()
+      const candidate = candidateUsers.find(c => (c._id || c.id) === candidateUserId)
       await axios.patch(`${API_BASE_URL}/api/admin/candidate-users/${candidateUserId}/suspend`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       })
+      addNotification('warning', `Candidate ${candidate?.name || 'account'} suspended`)
       fetchCandidateUsers()
     } catch (err) {
       setError('Failed to suspend candidate user')
@@ -455,13 +562,56 @@ export default function AdminDashboard() {
   const unsuspendCandidateUser = async (candidateUserId: string) => {
     try {
       const token = getAuthToken()
+      const candidate = candidateUsers.find(c => (c._id || c.id) === candidateUserId)
       await axios.patch(`${API_BASE_URL}/api/admin/candidate-users/${candidateUserId}/unsuspend`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       })
+      addNotification('success', `Candidate ${candidate?.name || 'account'} unsuspended`)
       fetchCandidateUsers()
     } catch (err) {
       setError('Failed to unsuspend candidate user')
       console.error('Unsuspend candidate user error:', err)
+    }
+  }
+
+  const handleViewCandidateUser = (candidateUser: CandidateUser) => {
+    setSelectedCandidateUser(candidateUser)
+    setShowCandidateUserModal(true)
+  }
+
+  const handleActionFromDropdown = async (action: 'approve' | 'reject' | 'suspend' | 'unsuspend', candidateUserId: string) => {
+    setOpenDropdownId(null)
+    switch(action) {
+      case 'approve':
+        await approveCandidateUser(candidateUserId)
+        break
+      case 'reject':
+        await rejectCandidateUser(candidateUserId)
+        break
+      case 'suspend':
+        await suspendCandidateUser(candidateUserId)
+        break
+      case 'unsuspend':
+        await unsuspendCandidateUser(candidateUserId)
+        break
+    }
+  }
+
+  const handleEmployerActionFromDropdown = async (action: 'approve' | 'reject' | 'suspend' | 'unsuspend', employerId: string) => {
+    setOpenEmployerDropdownId(null)
+    switch(action) {
+      case 'approve':
+        await approveEmployer(employerId)
+        break
+      case 'reject':
+        await rejectEmployer(employerId)
+        break
+      case 'suspend':
+        await suspendEmployer(employerId)
+        break
+      case 'unsuspend':
+        await unsuspendEmployer(employerId)
+        break
     }
   }
 
@@ -537,64 +687,68 @@ export default function AdminDashboard() {
     return matchesSearch && matchesStatus && matchesEmployer
   })
 
-  const notifications = [
-    { id: 1, type: 'success', message: 'New employer registration pending approval.', time: '5 min ago' },
-    { id: 2, type: 'warning', message: 'Employer AlphaTech reported 12 non-joins this week.', time: '1 hour ago' },
-    { id: 3, type: 'info', message: 'Daily backup completed successfully.', time: '2 hours ago' }
-  ]
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-red-600">RedHunt</h1>
-              <span className="ml-4 text-sm text-gray-500">Admin Console</span>
+      <header className="bg-white shadow-sm border-b sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <div className="flex items-center min-w-0">
+              <h1 className="text-lg sm:text-2xl font-bold text-red-600 truncate">Red-Flagged</h1>
+              <span className="hidden sm:inline ml-2 sm:ml-4 text-xs sm:text-sm text-gray-500 whitespace-nowrap">Admin Console</span>
             </div>
-            <div className="flex items-center space-x-4">
-              <button className="relative text-gray-700 hover:text-red-600 p-2">
-                <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  3
-                </span>
+            <div className="flex items-center space-x-1 sm:space-x-3">
+              <button 
+                onClick={() => setActiveTab('notifications')}
+                className="relative text-gray-700 hover:text-red-600 p-1.5 sm:p-2"
+              >
+                <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
+                {notifications.length > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 bg-red-500 text-white text-[10px] sm:text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center">
+                    {notifications.length > 9 ? '9+' : notifications.length}
+                  </span>
+                )}
               </button>
-              <button className="text-gray-700 hover:text-red-600 p-2">
-                <Settings className="h-5 w-5" />
-              </button>
-              <button className="text-gray-700 hover:text-red-600 p-2">
-                <LogOut className="h-5 w-5" />
+             
+              <button 
+                onClick={() => {
+                  localStorage.removeItem('adminToken')
+                  sessionStorage.removeItem('adminToken')
+                  window.location.href = '/admin/login'
+                }}
+                className="text-gray-700 hover:text-red-600 p-1.5 sm:p-2"
+                title="Logout"
+              >
+                <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg shadow-sm mb-8">
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
+        <div className="bg-white rounded-lg shadow-sm mb-6 sm:mb-8">
+          <div className="border-b border-gray-200 overflow-x-auto">
+            <nav className="flex space-x-4 sm:space-x-8 px-3 sm:px-6 min-w-max">
               {[
-                { id: 'dashboard', label: 'Dashboard' },
-                { id: 'employers', label: 'Employers' },
-                // { id: 'approved-employers', label: 'Approved Employers' },
-                { id: 'candidates', label: 'Candidates' },
-                { id: 'candidate-users', label: 'Candidate Users' },
-                { id: 'reports', label: 'Reports' },
-                { id: 'notifications', label: 'Notifications' }
+                { id: 'dashboard', label: 'Dashboard', shortLabel: 'Home' },
+                { id: 'employers', label: 'Employers', shortLabel: 'Employers' },
+                { id: 'candidates', label: 'Candidates', shortLabel: 'Candidates' },
+                { id: 'candidate-users', label: 'Candidate Users', shortLabel: 'Users' },
+                { id: 'notifications', label: 'Notifications', shortLabel: 'Alerts' }
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  className={`py-3 sm:py-4 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'border-red-500 text-red-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  {tab.label}
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.shortLabel}</span>
                 </button>
               ))}
             </nav>
@@ -605,7 +759,7 @@ export default function AdminDashboard() {
         {activeTab === 'dashboard' && (
           <div>
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">RedHunt Admin Console</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Red-Flagged Admin Console</h2>
               <p className="text-gray-600">Manage employers, data integrity, and analytics.</p>
             </div>
 
@@ -739,7 +893,8 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            {/* Desktop Table View */}
+            <div className="hidden lg:block bg-white rounded-lg shadow-sm overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -795,7 +950,7 @@ export default function AdminDashboard() {
                         {employer.createdAt ? new Date(employer.createdAt).toLocaleDateString() : employer.joinedOn}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-2 items-center">
                           <button
                             onClick={() => openView(employer)}
                             className="text-blue-600 hover:text-blue-900"
@@ -803,43 +958,58 @@ export default function AdminDashboard() {
                           >
                             <Eye className="h-4 w-4" />
                           </button>
-                          {normalizeStatus(employer.status) === 'pending' && (employer._id || employer.id) && (
-                            <>
-                              <button 
-                                onClick={() => approveEmployer(employer._id || employer.id!)}
-                                className="text-green-600 hover:text-green-900" 
-                                title="Approve"
+                          
+                          {(employer._id || employer.id) && (
+                            <div className="relative">
+                              <button
+                                onClick={() => setOpenEmployerDropdownId(openEmployerDropdownId === (employer._id || employer.id) ? null : (employer._id || employer.id!))}
+                                className="flex items-center space-x-1 px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
                               >
-                                <CheckCircle className="h-4 w-4" />
+                                <span>Action</span>
+                                <ChevronDown className="h-3 w-3" />
                               </button>
-                              <button 
-                                onClick={() => rejectEmployer(employer._id || employer.id!)}
-                                className="text-red-600 hover:text-red-900" 
-                                title="Reject"
-                              >
-                                <Ban className="h-4 w-4" />
-                              </button>
-                            </>
-                          )}
-
-                          {normalizeStatus(employer.status) === 'approved' && (employer._id || employer.id) && (
-                            <button 
-                              onClick={() => suspendEmployer(employer._id || employer.id!)}
-                              className="text-orange-600 hover:text-orange-900" 
-                              title="Suspend"
-                            >
-                              <Ban className="h-4 w-4" />
-                            </button>
-                          )}
-
-                          {normalizeStatus(employer.status) === 'suspended' && (employer._id || employer.id) && (
-                            <button 
-                              onClick={() => unsuspendEmployer(employer._id || employer.id!)}
-                              className="text-green-600 hover:text-green-900" 
-                              title="Unsuspend"
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </button>
+                              
+                              {openEmployerDropdownId === (employer._id || employer.id) && (
+                                <div className="absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                                  {normalizeStatus(employer.status) === 'pending' && (
+                                    <>
+                                      <button
+                                        onClick={() => handleEmployerActionFromDropdown('approve', employer._id || employer.id!)}
+                                        className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 flex items-center space-x-2"
+                                      >
+                                        <CheckCircle className="h-4 w-4" />
+                                        <span>Approve</span>
+                                      </button>
+                                      <button
+                                        onClick={() => handleEmployerActionFromDropdown('reject', employer._id || employer.id!)}
+                                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                                      >
+                                        <Ban className="h-4 w-4" />
+                                        <span>Reject</span>
+                                      </button>
+                                    </>
+                                  )}
+                                  {normalizeStatus(employer.status) === 'approved' && (
+                                    <button
+                                      onClick={() => handleEmployerActionFromDropdown('suspend', employer._id || employer.id!)}
+                                      className="w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 flex items-center space-x-2"
+                                    >
+                                      <Ban className="h-4 w-4" />
+                                      <span>Suspend</span>
+                                    </button>
+                                  )}
+                                  {normalizeStatus(employer.status) === 'suspended' && (
+                                    <button
+                                      onClick={() => handleEmployerActionFromDropdown('unsuspend', employer._id || employer.id!)}
+                                      className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 flex items-center space-x-2"
+                                    >
+                                      <CheckCircle className="h-4 w-4" />
+                                      <span>Unsuspend</span>
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                       </td>
@@ -854,40 +1024,322 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
+
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-4">
+              {filteredEmployers.map((employer) => (
+                <div key={employer._id || employer.id} className="bg-white rounded-lg shadow-sm p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2">
+                        <Building2 className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                        <h3 className="font-semibold text-gray-900 truncate">{employer.companyName || employer.company}</h3>
+                      </div>
+                      <p className="text-sm text-gray-600 break-all mt-1">{employer.email}</p>
+                    </div>
+                    <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
+                      normalizeStatus(employer.status) === 'approved'
+                        ? 'bg-green-100 text-green-800'
+                        : normalizeStatus(employer.status) === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : normalizeStatus(employer.status) === 'suspended'
+                        ? 'bg-orange-100 text-orange-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {normalizeStatus(employer.status) === 'approved' ? 'Approved' :
+                       normalizeStatus(employer.status) === 'pending' ? 'Pending' :
+                       normalizeStatus(employer.status) === 'suspended' ? 'Suspended' : 'Rejected'}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-sm text-gray-600 mb-3">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Candidates:</span>
+                      <span>{employer.candidateCount || employer.candidates || 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Joined:</span>
+                      <span>{employer.createdAt ? new Date(employer.createdAt).toLocaleDateString() : employer.joinedOn || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Activity:</span>
+                      <span className="text-right">{employer.lastActivity || 'Recently active'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-3 border-t">
+                    <button
+                      onClick={() => openView(employer)}
+                      className="flex-1 px-3 py-2 text-sm text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 flex items-center justify-center space-x-1"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span>View Details</span>
+                    </button>
+                    {(employer._id || employer.id) && normalizeStatus(employer.status) === 'pending' && (
+                      <>
+                        <button
+                          onClick={() => handleEmployerActionFromDropdown('approve', employer._id || employer.id!)}
+                          className="flex-1 px-3 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleEmployerActionFromDropdown('reject', employer._id || employer.id!)}
+                          className="flex-1 px-3 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+                    {(employer._id || employer.id) && normalizeStatus(employer.status) === 'approved' && (
+                      <button
+                        onClick={() => handleEmployerActionFromDropdown('suspend', employer._id || employer.id!)}
+                        className="flex-1 px-3 py-2 text-sm text-white bg-orange-600 rounded-lg hover:bg-orange-700"
+                      >
+                        Suspend
+                      </button>
+                    )}
+                    {(employer._id || employer.id) && normalizeStatus(employer.status) === 'suspended' && (
+                      <button
+                        onClick={() => handleEmployerActionFromDropdown('unsuspend', employer._id || employer.id!)}
+                        className="flex-1 px-3 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700"
+                      >
+                        Unsuspend
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {filteredEmployers.length === 0 && !loading && (
+                <div className="bg-white rounded-lg shadow-sm p-8 text-center text-gray-500">
+                  No employers found
+                </div>
+              )}
+            </div>
             
             {isViewOpen && selectedEmployer && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-                <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
-                  <div className="flex items-center justify-between border-b px-6 py-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Employer Details</h3>
-                    <button onClick={closeView} className="text-gray-500 hover:text-gray-700">✕</button>
+                <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between border-b px-6 py-4 sticky top-0 bg-white z-10">
+                    <h3 className="text-xl font-semibold text-gray-900">Employer Details</h3>
+                    <button onClick={closeView} className="text-gray-500 hover:text-gray-700">
+                      <X className="h-5 w-5" />
+                    </button>
                   </div>
-                  <div className="px-6 py-4 space-y-3">
-                    <div className="grid grid-cols-3 gap-2 text-sm">
-                      <div className="text-gray-500">Company</div>
-                      <div className="col-span-2 text-gray-900">{selectedEmployer.companyName || selectedEmployer.company}</div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-sm">
-                      <div className="text-gray-500">Email</div>
-                      <div className="col-span-2 text-gray-900 break-words">{selectedEmployer.email}</div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-sm">
-                      <div className="text-gray-500">Status</div>
-                      <div className="col-span-2 text-gray-900 capitalize">{normalizeStatus(selectedEmployer.status)}</div>
-                    </div>
-                    {selectedEmployer.candidateCount !== undefined && (
-                      <div className="grid grid-cols-3 gap-2 text-sm">
-                        <div className="text-gray-500">Candidates</div>
-                        <div className="col-span-2 text-gray-900">{selectedEmployer.candidateCount}</div>
+                  
+                  <div className="px-6 py-4 space-y-6">
+                    {/* Company Information */}
+                    <div className="border-b pb-4">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <Building2 className="h-5 w-5 mr-2 text-blue-600" />
+                        Company Information
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <div className="text-sm text-gray-500 mb-1">Company Name</div>
+                          <div className="text-gray-900 font-medium">{selectedEmployer.companyName || selectedEmployer.company || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-500 mb-1">Email Address</div>
+                          <div className="text-gray-900 break-all">{selectedEmployer.email || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-500 mb-1">Account Status</div>
+                          <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
+                            normalizeStatus(selectedEmployer.status) === 'approved'
+                              ? 'bg-green-100 text-green-800'
+                              : normalizeStatus(selectedEmployer.status) === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : normalizeStatus(selectedEmployer.status) === 'suspended'
+                              ? 'bg-orange-100 text-orange-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {normalizeStatus(selectedEmployer.status) === 'approved' ? 'Approved' :
+                             normalizeStatus(selectedEmployer.status) === 'pending' ? 'Pending' :
+                             normalizeStatus(selectedEmployer.status) === 'suspended' ? 'Suspended' : 'Rejected'}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-500 mb-1">Last Activity</div>
+                          <div className="text-gray-900">{selectedEmployer.lastActivity || 'Recently active'}</div>
+                        </div>
                       </div>
-                    )}
-                    <div className="grid grid-cols-3 gap-2 text-sm">
-                      <div className="text-gray-500">Joined</div>
-                      <div className="col-span-2 text-gray-900">{selectedEmployer.createdAt ? new Date(selectedEmployer.createdAt).toLocaleString() : '-'}</div>
+                    </div>
+
+                    {/* Statistics */}
+                    <div className="border-b pb-4">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
+                        Statistics
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                          <div className="text-sm text-blue-600 mb-1">Total Candidates</div>
+                          <div className="text-2xl font-bold text-blue-900">
+                            {selectedEmployer.candidateCount || selectedEmployer.candidates || 0}
+                          </div>
+                        </div>
+                        <div className="bg-green-50 p-4 rounded-lg">
+                          <div className="text-sm text-green-600 mb-1">Account Status</div>
+                          <div className="text-lg font-bold text-green-900 capitalize">
+                            {normalizeStatus(selectedEmployer.status)}
+                          </div>
+                        </div>
+                        <div className="bg-purple-50 p-4 rounded-lg">
+                          <div className="text-sm text-purple-600 mb-1">Member Since</div>
+                          <div className="text-sm font-bold text-purple-900">
+                            {selectedEmployer.createdAt 
+                              ? new Date(selectedEmployer.createdAt).toLocaleDateString('en-US', { 
+                                  year: 'numeric', 
+                                  month: 'short', 
+                                  day: 'numeric' 
+                                })
+                              : selectedEmployer.joinedOn || 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Account Timeline */}
+                    <div className="border-b pb-4">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <Clock className="h-5 w-5 mr-2 text-orange-600" />
+                        Account Timeline
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <div className="text-sm text-gray-500 mb-1">Registration Date</div>
+                          <div className="text-gray-900">
+                            {selectedEmployer.createdAt 
+                              ? new Date(selectedEmployer.createdAt).toLocaleString('en-US', {
+                                  weekday: 'short',
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })
+                              : 'N/A'}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-500 mb-1">Joined On</div>
+                          <div className="text-gray-900">{selectedEmployer.joinedOn || 'N/A'}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* System Information */}
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <Shield className="h-5 w-5 mr-2 text-indigo-600" />
+                        System Information
+                      </h4>
+                      <div className="grid grid-cols-1 gap-4">
+                        <div>
+                          <div className="text-sm text-gray-500 mb-1">Employer ID</div>
+                          <div className="text-gray-900 text-xs font-mono bg-gray-100 p-2 rounded break-all">
+                            {selectedEmployer._id || selectedEmployer.id || 'N/A'}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <div className="text-sm text-gray-500 mb-1">Account Type</div>
+                            <div className="text-gray-900">Employer Account</div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-500 mb-1">Verification Status</div>
+                            <div className="text-gray-900 capitalize flex items-center">
+                              {normalizeStatus(selectedEmployer.status) === 'approved' ? (
+                                <>
+                                  <CheckCircle className="h-4 w-4 text-green-600 mr-1" />
+                                  <span className="text-green-600">Verified</span>
+                                </>
+                              ) : normalizeStatus(selectedEmployer.status) === 'pending' ? (
+                                <>
+                                  <Clock className="h-4 w-4 text-yellow-600 mr-1" />
+                                  <span className="text-yellow-600">Pending Verification</span>
+                                </>
+                              ) : normalizeStatus(selectedEmployer.status) === 'suspended' ? (
+                                <>
+                                  <AlertTriangle className="h-4 w-4 text-orange-600 mr-1" />
+                                  <span className="text-orange-600">Suspended</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Ban className="h-4 w-4 text-red-600 mr-1" />
+                                  <span className="text-red-600">Rejected</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="border-t px-6 py-4 flex justify-end gap-2">
-                    <button onClick={closeView} className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50">Close</button>
+
+                  {/* Action Footer */}
+                  <div className="border-t px-6 py-4 flex justify-between items-center sticky bottom-0 bg-gray-50">
+                    <div className="text-sm text-gray-600">
+                      Last updated: {selectedEmployer.createdAt ? new Date(selectedEmployer.createdAt).toLocaleDateString() : 'N/A'}
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={closeView} 
+                        className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-100"
+                      >
+                        Close
+                      </button>
+                      {normalizeStatus(selectedEmployer.status) === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => {
+                              approveEmployer(selectedEmployer._id || selectedEmployer.id!)
+                              closeView()
+                            }}
+                            className="px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center space-x-1"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                            <span>Approve</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              rejectEmployer(selectedEmployer._id || selectedEmployer.id!)
+                              closeView()
+                            }}
+                            className="px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 flex items-center space-x-1"
+                          >
+                            <Ban className="h-4 w-4" />
+                            <span>Reject</span>
+                          </button>
+                        </>
+                      )}
+                      {normalizeStatus(selectedEmployer.status) === 'approved' && (
+                        <button
+                          onClick={() => {
+                            suspendEmployer(selectedEmployer._id || selectedEmployer.id!)
+                            closeView()
+                          }}
+                          className="px-4 py-2 text-sm text-white bg-orange-600 rounded-lg hover:bg-orange-700 flex items-center space-x-1"
+                        >
+                          <Ban className="h-4 w-4" />
+                          <span>Suspend</span>
+                        </button>
+                      )}
+                      {normalizeStatus(selectedEmployer.status) === 'suspended' && (
+                        <button
+                          onClick={() => {
+                            unsuspendEmployer(selectedEmployer._id || selectedEmployer.id!)
+                            closeView()
+                          }}
+                          className="px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center space-x-1"
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                          <span>Unsuspend</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1004,7 +1456,8 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            {/* Desktop Table View */}
+            <div className="hidden lg:block bg-white rounded-lg shadow-sm overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -1075,6 +1528,7 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
                           <button
+                            onClick={() => openCandidateView(candidate)}
                             className="text-blue-600 hover:text-blue-900"
                             title="View Details"
                           >
@@ -1095,6 +1549,79 @@ export default function AdminDashboard() {
               
               {filteredCandidates.length === 0 && !candidatesLoading && (
                 <div className="text-center py-8 text-gray-500">
+                  No candidates found
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-4">
+              {filteredCandidates.map((candidate) => (
+                <div key={candidate._id || candidate.id} className="bg-white rounded-lg shadow-sm p-4">
+                  <div className="flex items-start space-x-3 mb-3">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Users className="h-6 w-6 text-gray-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900">{candidate.name}</h3>
+                      <p className="text-sm text-gray-600 break-all">{candidate.email}</p>
+                      <p className="text-xs text-gray-500 mt-1">{candidate.uan || 'No UAN'}</p>
+                    </div>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
+                      candidate.joiningStatus === 'joined' || candidate.offerStatus === 'Joined'
+                        ? 'bg-green-100 text-green-800'
+                        : candidate.joiningStatus === 'not_joined' || candidate.offerStatus === 'Not Joined'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {candidate.joiningStatus === 'joined' ? 'Joined' :
+                       candidate.joiningStatus === 'not_joined' ? 'Not Joined' :
+                       candidate.offerStatus || 'Pending'}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-sm text-gray-600 mb-3">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Mobile:</span>
+                      <span>{candidate.mobile || 'No phone'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Position:</span>
+                      <span className="text-right">{candidate.position || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Employer:</span>
+                      <span className="text-right">{candidate.employerName || 'Unknown'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Date:</span>
+                      <span>
+                        {candidate.offerDate ? new Date(candidate.offerDate).toLocaleDateString() : 
+                         candidate.createdAt ? new Date(candidate.createdAt).toLocaleDateString() : '-'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-3 border-t">
+                    <button
+                      onClick={() => openCandidateView(candidate)}
+                      className="flex-1 px-3 py-2 text-sm text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 flex items-center justify-center space-x-1"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span>View</span>
+                    </button>
+                    <button
+                      className="flex-1 px-3 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center justify-center space-x-1"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      <span>Verify</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {filteredCandidates.length === 0 && !candidatesLoading && (
+                <div className="bg-white rounded-lg shadow-sm p-8 text-center text-gray-500">
                   No candidates found
                 </div>
               )}
@@ -1153,27 +1680,29 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
+            {/* Desktop Table */}
+            <div className="hidden lg:block bg-white rounded-lg shadow-sm overflow-hidden">
+              <table className="w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UAN</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PAN</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {candidateUsers.map((u) => (
+                  {candidateUsers.map((u) => {
+                    const displayName = u.name || (u as any).fullName || (u as any).candidateName || (u.primaryEmail || u.email)?.split('@')[0] || '-'
+                    return (
                     <tr key={u._id || u.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.name || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.uan || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.pan || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-4 text-sm text-gray-900">{displayName}</td>
+                      <td className="px-4 py-4 text-sm text-gray-900 max-w-[200px] truncate">{u.primaryEmail || u.email}</td>
+                      <td className="px-4 py-4 text-sm text-gray-900">{u.mobileNumber || u.mobile || '-'}</td>
+                      <td className="px-4 py-4 text-sm text-gray-900">{u.presentCompany || '-'}</td>
+                      <td className="px-4 py-4">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           (u.status || '').toLowerCase() === 'approved'
                             ? 'bg-green-100 text-green-800'
@@ -1186,225 +1715,610 @@ export default function AdminDashboard() {
                           {(u.status || '').charAt(0).toUpperCase() + (u.status || '').slice(1)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          {(u.status || '').toLowerCase() === 'pending' && (u._id || u.id) && (
-                            <>
+                      <td className="px-4 py-4 text-sm font-medium">
+                        <div className="flex space-x-2 items-center">
+                          <button
+                            onClick={() => handleViewCandidateUser(u)}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="View Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          
+                          {(u._id || u.id) && (
+                            <div className="relative">
                               <button
-                                onClick={() => approveCandidateUser(u._id || u.id!)}
-                                className="text-green-600 hover:text-green-900"
-                                title="Approve"
+                                onClick={() => setOpenDropdownId(openDropdownId === (u._id || u.id) ? null : (u._id || u.id!))}
+                                className="flex items-center space-x-1 px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
                               >
-                                <CheckCircle className="h-4 w-4" />
+                                <span>Action</span>
+                                <ChevronDown className="h-3 w-3" />
                               </button>
-                              <button
-                                onClick={() => rejectCandidateUser(u._id || u.id!)}
-                                className="text-red-600 hover:text-red-900"
-                                title="Reject"
-                              >
-                                <Ban className="h-4 w-4" />
-                              </button>
-                            </>
-                          )}
-                          {(u.status || '').toLowerCase() === 'approved' && (u._id || u.id) && (
-                            <button
-                              onClick={() => suspendCandidateUser(u._id || u.id!)}
-                              className="text-orange-600 hover:text-orange-900"
-                              title="Suspend"
-                            >
-                              <Ban className="h-4 w-4" />
-                            </button>
-                          )}
-                          {(u.status || '').toLowerCase() === 'suspended' && (u._id || u.id) && (
-                            <button
-                              onClick={() => unsuspendCandidateUser(u._id || u.id!)}
-                              className="text-green-600 hover:text-green-900"
-                              title="Unsuspend"
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </button>
+                              
+                              {openDropdownId === (u._id || u.id) && (
+                                <div className="absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                                  {(u.status || '').toLowerCase() === 'pending' && (
+                                    <>
+                                      <button
+                                        onClick={() => handleActionFromDropdown('approve', u._id || u.id!)}
+                                        className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 flex items-center space-x-2"
+                                      >
+                                        <CheckCircle className="h-4 w-4" />
+                                        <span>Approve</span>
+                                      </button>
+                                      <button
+                                        onClick={() => handleActionFromDropdown('reject', u._id || u.id!)}
+                                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                                      >
+                                        <Ban className="h-4 w-4" />
+                                        <span>Reject</span>
+                                      </button>
+                                    </>
+                                  )}
+                                  {(u.status || '').toLowerCase() === 'approved' && (
+                                    <button
+                                      onClick={() => handleActionFromDropdown('suspend', u._id || u.id!)}
+                                      className="w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 flex items-center space-x-2"
+                                    >
+                                      <Ban className="h-4 w-4" />
+                                      <span>Suspend</span>
+                                    </button>
+                                  )}
+                                  {(u.status || '').toLowerCase() === 'suspended' && (
+                                    <button
+                                      onClick={() => handleActionFromDropdown('unsuspend', u._id || u.id!)}
+                                      className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 flex items-center space-x-2"
+                                    >
+                                      <CheckCircle className="h-4 w-4" />
+                                      <span>Unsuspend</span>
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
-
-              {candidateUsers.length === 0 && !candidateUsersLoading && (
-                <div className="text-center py-8 text-gray-500">No candidate users found</div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Reports Tab */}
-        {activeTab === 'reports' && (
-          <div>
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Reports & System Analytics</h2>
-              <p className="text-gray-600">Comprehensive analytics and system insights.</p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Employers (Month-on-Month)</h3>
-                <div className="space-y-2">
-                  {reports?.monthlyEmployers ? Object.entries(reports.monthlyEmployers).map(([month, count]) => (
-                    <div key={month} className="flex justify-between items-center">
-                      <span className="text-gray-600">{month}</span>
-                      <span className="font-medium">{count.toString()}</span>
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-4">
+              {candidateUsers.map((u) => {
+                const displayName = u.name || (u as any).fullName || (u as any).candidateName || (u.primaryEmail || u.email)?.split('@')[0] || '-'
+                return (
+                <div key={u._id || u.id} className="bg-white rounded-lg shadow-sm p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900">{displayName}</h3>
+                      <p className="text-sm text-gray-600 break-all">{u.primaryEmail || u.email}</p>
                     </div>
-                  )) : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((month, index) => (
-                    <div key={index} className="flex justify-between items-center">
-                      <span className="text-gray-600">{month}</span>
-                      <span className="font-medium">{120 + index * 8}</span>
+                    <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
+                      (u.status || '').toLowerCase() === 'approved'
+                        ? 'bg-green-100 text-green-800'
+                        : (u.status || '').toLowerCase() === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : (u.status || '').toLowerCase() === 'suspended'
+                        ? 'bg-orange-100 text-orange-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {(u.status || '').charAt(0).toUpperCase() + (u.status || '').slice(1)}
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-2 text-sm text-gray-600 mb-3">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Mobile:</span>
+                      <span>{u.mobileNumber || u.mobile || '-'}</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Non-Joining Rate by Industry</h3>
-                <div className="space-y-2">
-                  {reports?.industryRates ? Object.entries(reports.industryRates).map(([industry, rate]) => (
-                    <div key={industry} className="flex justify-between items-center">
-                      <span className="text-gray-600">{industry}</span>
-                      <span className="font-medium">{rate.toString()}%</span>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Company:</span>
+                      <span className="text-right">{u.presentCompany || '-'}</span>
                     </div>
-                  )) : ['IT/Software', 'Finance', 'Healthcare', 'Manufacturing', 'Education'].map((industry, index) => (
-                    <div key={index} className="flex justify-between items-center">
-                      <span className="text-gray-600">{industry}</span>
-                      <span className="font-medium">{15 + index * 3}%</span>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Designation:</span>
+                      <span className="text-right">{u.designation || '-'}</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Contributing Employers</h3>
-                <div className="space-y-2">
-                  {reports?.topEmployers ? Object.entries(reports.topEmployers).map(([company, count]) => (
-                    <div key={company} className="flex justify-between items-center">
-                      <span className="text-gray-600">{company}</span>
-                      <span className="font-medium">{count.toString()}</span>
-                    </div>
-                  )) : ['AlphaTech', 'BetaCorp', 'GammaTech', 'DeltaInc', 'EpsilonLabs'].map((company, index) => (
-                    <div key={index} className="flex justify-between items-center">
-                      <span className="text-gray-600">{company}</span>
-                      <span className="font-medium">{245 - index * 40}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">System Analytics</h3>
-                <div className="flex space-x-2">
-                  <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export CSV
-                  </button>
-                  <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export PDF
-                  </button>
-                </div>
-              </div>
-              
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">API Usage Stats</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Total Requests</span>
-                      <span className="font-medium">{reports?.apiStats?.totalRequests || '12,847'}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Successful</span>
-                      <span className="font-medium text-green-600">{reports?.apiStats?.successRate || '98.2%'}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Failed</span>
-                      <span className="font-medium text-red-600">{reports?.apiStats?.failureRate || '1.8%'}</span>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Experience:</span>
+                      <span>{u.workExperience ? `${u.workExperience} yrs` : '-'}</span>
                     </div>
                   </div>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Offer Rejection Heatmap</h4>
-                  <div className="space-y-2">
-                    {reports?.rejectionHeatmap ? Object.entries(reports.rejectionHeatmap).map(([role, level]) => (
-                      <div key={role} className="flex justify-between items-center">
-                        <span className="text-gray-600">{role}</span>
-                        <span className={`font-medium ${
-                          level === 'High' ? 'text-red-600' : 
-                          level === 'Medium' ? 'text-yellow-600' : 'text-green-600'
-                        }`}>{level.toString()}</span>
-                      </div>
-                    )) : (
+                  
+                  <div className="flex gap-2 pt-3 border-t">
+                    <button
+                      onClick={() => handleViewCandidateUser(u)}
+                      className="flex-1 px-3 py-2 text-sm text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50"
+                    >
+                      View Details
+                    </button>
+                    {(u._id || u.id) && (u.status || '').toLowerCase() === 'pending' && (
                       <>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-600">Software Engineer</span>
-                          <span className="font-medium text-red-600">High</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-600">Data Analyst</span>
-                          <span className="font-medium text-yellow-600">Medium</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-600">Marketing Manager</span>
-                          <span className="font-medium text-green-600">Low</span>
-                        </div>
+                        <button
+                          onClick={() => handleActionFromDropdown('approve', u._id || u.id!)}
+                          className="flex-1 px-3 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleActionFromDropdown('reject', u._id || u.id!)}
+                          className="flex-1 px-3 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700"
+                        >
+                          Reject
+                        </button>
                       </>
+                    )}
+                    {(u._id || u.id) && (u.status || '').toLowerCase() === 'approved' && (
+                      <button
+                        onClick={() => handleActionFromDropdown('suspend', u._id || u.id!)}
+                        className="flex-1 px-3 py-2 text-sm text-white bg-orange-600 rounded-lg hover:bg-orange-700"
+                      >
+                        Suspend
+                      </button>
+                    )}
+                    {(u._id || u.id) && (u.status || '').toLowerCase() === 'suspended' && (
+                      <button
+                        onClick={() => handleActionFromDropdown('unsuspend', u._id || u.id!)}
+                        className="flex-1 px-3 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700"
+                      >
+                        Unsuspend
+                      </button>
                     )}
                   </div>
                 </div>
-              </div>
+              )})}
             </div>
+
+            {candidateUsers.length === 0 && !candidateUsersLoading && (
+              <div className="text-center py-8 text-gray-500">No candidate users found</div>
+            )}
           </div>
         )}
+
 
         {/* Notifications Tab */}
         {activeTab === 'notifications' && (
           <div>
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">System Notifications</h2>
-              <p className="text-gray-600">Monitor system alerts and important updates.</p>
+            <div className="mb-8 flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">System Notifications</h2>
+                <p className="text-gray-600">Monitor system alerts and important updates.</p>
+              </div>
+              {notifications.length > 0 && (
+                <button
+                  onClick={() => {
+                    setNotifications([])
+                    localStorage.removeItem('adminNotifications')
+                  }}
+                  className="px-4 py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50"
+                >
+                  Clear All
+                </button>
+              )}
             </div>
 
-            <div className="space-y-4">
-              {notifications.map((notification) => (
-                <div key={notification.id} className="bg-white rounded-lg shadow-sm p-6">
-                  <div className="flex items-start space-x-4">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      notification.type === 'success' 
-                        ? 'bg-green-100' 
-                        : notification.type === 'warning'
-                        ? 'bg-yellow-100'
-                        : 'bg-blue-100'
-                    }`}>
-                      {notification.type === 'success' && <CheckCircle className="h-5 w-5 text-green-600" />}
-                      {notification.type === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-600" />}
-                      {notification.type === 'info' && <Bell className="h-5 w-5 text-blue-600" />}
+            {notifications.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+                <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Notifications</h3>
+                <p className="text-gray-500">You&apos;re all caught up! Notifications will appear here when there&apos;s activity.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {notifications.map((notification) => (
+                  <div key={notification.id} className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
+                    <div className="flex items-start space-x-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        notification.type === 'success' 
+                          ? 'bg-green-100' 
+                          : notification.type === 'warning'
+                          ? 'bg-yellow-100'
+                          : 'bg-blue-100'
+                      }`}>
+                        {notification.type === 'success' && <CheckCircle className="h-5 w-5 text-green-600" />}
+                        {notification.type === 'warning' && <AlertTriangle className="h-5 w-5 text-yellow-600" />}
+                        {notification.type === 'info' && <Bell className="h-5 w-5 text-blue-600" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-gray-900 font-medium">{notification.message}</p>
+                        <p className="text-sm text-gray-500 mt-1">{notification.time}</p>
+                      </div>
+                      <button 
+                        onClick={() => setNotifications(prev => prev.filter(n => n.id !== notification.id))}
+                        className="text-gray-400 hover:text-red-600 flex-shrink-0"
+                        title="Remove notification"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-gray-900">{notification.message}</p>
-                      <p className="text-sm text-gray-500 mt-1">{notification.time}</p>
-                    </div>
-                    <button className="text-gray-400 hover:text-gray-600">
-                      <Eye className="h-5 w-5" />
-                    </button>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* Candidate User Details Modal */}
+      {showCandidateUserModal && selectedCandidateUser && (() => {
+        const displayName = selectedCandidateUser.name || (selectedCandidateUser as any).fullName || (selectedCandidateUser as any).candidateName || (selectedCandidateUser.primaryEmail || selectedCandidateUser.email)?.split('@')[0] || 'N/A'
+        const displayFatherName = selectedCandidateUser.fathersName || (selectedCandidateUser as any).fatherName || (selectedCandidateUser as any).father_name || 'N/A'
+        
+        return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Candidate User Details</h2>
+                <button
+                  onClick={() => setShowCandidateUserModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Personal Information */}
+                <div className="border-b pb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                      <p className="text-gray-900">{displayName}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Father&apos;s Name</label>
+                      <p className="text-gray-900">{displayFatherName}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Gender</label>
+                      <p className="text-gray-900 capitalize">{selectedCandidateUser.gender || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
+                      <p className="text-gray-900">
+                        {selectedCandidateUser.dob ? new Date(selectedCandidateUser.dob).toLocaleDateString() : 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Mobile Number</label>
+                      <p className="text-gray-900">{selectedCandidateUser.mobileNumber || selectedCandidateUser.mobile || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Primary Email</label>
+                      <p className="text-gray-900 text-sm break-all">{selectedCandidateUser.primaryEmail || selectedCandidateUser.email || 'N/A'}</p>
+                    </div>
+                    <div className="md:col-span-3">
+                      <label className="block text-sm font-medium text-gray-700">Secondary Email</label>
+                      <p className="text-gray-900 text-sm">{selectedCandidateUser.secondaryEmail || 'N/A'}</p>
+                    </div>
+                    <div className="md:col-span-3">
+                      <label className="block text-sm font-medium text-gray-700">Permanent Address</label>
+                      <p className="text-gray-900">{selectedCandidateUser.permanentAddress || 'N/A'}</p>
+                    </div>
+                    <div className="md:col-span-3">
+                      <label className="block text-sm font-medium text-gray-700">Current Address</label>
+                      <p className="text-gray-900">{selectedCandidateUser.currentAddress || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Professional Information */}
+                <div className="border-b pb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Professional Information</h3>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">PAN Number</label>
+                      <p className="text-gray-900">{selectedCandidateUser.panNumber || selectedCandidateUser.pan || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">UAN Number</label>
+                      <p className="text-gray-900">{selectedCandidateUser.uanNumber || selectedCandidateUser.uan || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Highest Qualification</label>
+                      <p className="text-gray-900 capitalize">{selectedCandidateUser.highestQualification?.replace('-', ' ') || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Work Experience</label>
+                      <p className="text-gray-900">{selectedCandidateUser.workExperience ? `${selectedCandidateUser.workExperience} years` : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Sector</label>
+                      <p className="text-gray-900 capitalize">{selectedCandidateUser.sector?.replace('-', ' ') || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Present Company</label>
+                      <p className="text-gray-900">{selectedCandidateUser.presentCompany || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Designation</label>
+                      <p className="text-gray-900">{selectedCandidateUser.designation || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Latest Rating</label>
+                      <p className="text-gray-900">{selectedCandidateUser.latestRating || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Work Location</label>
+                      <p className="text-gray-900">{selectedCandidateUser.workLocation || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Open to Relocation</label>
+                      <p className="text-gray-900 capitalize">{selectedCandidateUser.openToRelocation || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Current CTC</label>
+                      <p className="text-gray-900">{selectedCandidateUser.currentCtc || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Expected Hike %</label>
+                      <p className="text-gray-900">{selectedCandidateUser.expectedHikePercentage || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Notice Period</label>
+                      <p className="text-gray-900">{selectedCandidateUser.noticePeriod ? `${selectedCandidateUser.noticePeriod} days` : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Negotiable Days</label>
+                      <p className="text-gray-900">{selectedCandidateUser.negotiableDays ? `${selectedCandidateUser.negotiableDays} days` : 'N/A'}</p>
+                    </div>
+                  </div>
+                  {selectedCandidateUser.skillSets && selectedCandidateUser.skillSets.length > 0 && (
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Skill Sets</label>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedCandidateUser.skillSets.map((skill, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Account Information */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Account Status</label>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        (selectedCandidateUser.status || '').toLowerCase() === 'approved'
+                          ? 'bg-green-100 text-green-800'
+                          : (selectedCandidateUser.status || '').toLowerCase() === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : (selectedCandidateUser.status || '').toLowerCase() === 'suspended'
+                          ? 'bg-orange-100 text-orange-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {(selectedCandidateUser.status || '').charAt(0).toUpperCase() + (selectedCandidateUser.status || '').slice(1)}
+                      </span>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Registration Date</label>
+                      <p className="text-gray-900">
+                        {selectedCandidateUser.createdAt ? new Date(selectedCandidateUser.createdAt).toLocaleString() : 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Last Updated</label>
+                      <p className="text-gray-900">
+                        {selectedCandidateUser.updatedAt ? new Date(selectedCandidateUser.updatedAt).toLocaleString() : 'N/A'}
+                      </p>
+                    </div>
+                    <div className="md:col-span-3">
+                      <label className="block text-sm font-medium text-gray-700">Account ID</label>
+                      <p className="text-gray-900 text-xs break-all font-mono">{selectedCandidateUser._id || selectedCandidateUser.id || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-8 flex justify-end space-x-4 border-t pt-4">
+                <button
+                  onClick={() => setShowCandidateUserModal(false)}
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                >
+                  Close
+                </button>
+                {(selectedCandidateUser.status || '').toLowerCase() === 'pending' && (
+                  <>
+                    <button
+                      onClick={() => {
+                        approveCandidateUser(selectedCandidateUser._id || selectedCandidateUser.id!)
+                        setShowCandidateUserModal(false)
+                      }}
+                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      <span>Approve</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        rejectCandidateUser(selectedCandidateUser._id || selectedCandidateUser.id!)
+                        setShowCandidateUserModal(false)
+                      }}
+                      className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center space-x-2"
+                    >
+                      <Ban className="h-4 w-4" />
+                      <span>Reject</span>
+                    </button>
+                  </>
+                )}
+                {(selectedCandidateUser.status || '').toLowerCase() === 'approved' && (
+                  <button
+                    onClick={() => {
+                      suspendCandidateUser(selectedCandidateUser._id || selectedCandidateUser.id!)
+                      setShowCandidateUserModal(false)
+                    }}
+                    className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center space-x-2"
+                  >
+                    <Ban className="h-4 w-4" />
+                    <span>Suspend</span>
+                  </button>
+                )}
+                {(selectedCandidateUser.status || '').toLowerCase() === 'suspended' && (
+                  <button
+                    onClick={() => {
+                      unsuspendCandidateUser(selectedCandidateUser._id || selectedCandidateUser.id!)
+                      setShowCandidateUserModal(false)
+                    }}
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Unsuspend</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        )
+      })()}
+
+      {/* Candidate View Modal */}
+      {isCandidateViewOpen && selectedCandidate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b px-6 py-4 sticky top-0 bg-white">
+              <h3 className="text-lg font-semibold text-gray-900">Candidate Details</h3>
+              <button onClick={closeCandidateView} className="text-gray-500 hover:text-gray-700">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="px-6 py-4 space-y-4">
+              {/* Candidate Information */}
+              <div className="border-b pb-4">
+                <h4 className="text-md font-semibold text-gray-900 mb-3">Personal Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-500">Name</div>
+                    <div className="text-gray-900 font-medium">{selectedCandidate.name || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Email</div>
+                    <div className="text-gray-900 break-all">{selectedCandidate.email || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Mobile</div>
+                    <div className="text-gray-900">{selectedCandidate.mobile || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">UAN Number</div>
+                    <div className="text-gray-900">{selectedCandidate.uan || 'N/A'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Employment Information */}
+              <div className="border-b pb-4">
+                <h4 className="text-md font-semibold text-gray-900 mb-3">Employment Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-500">Position/Role</div>
+                    <div className="text-gray-900">{selectedCandidate.position || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Employer</div>
+                    <div className="text-gray-900">{selectedCandidate.employerName || 'Unknown'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Offer Date</div>
+                    <div className="text-gray-900">
+                      {selectedCandidate.offerDate ? new Date(selectedCandidate.offerDate).toLocaleDateString() : 'N/A'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Joining Date</div>
+                    <div className="text-gray-900">
+                      {selectedCandidate.joiningDate ? new Date(selectedCandidate.joiningDate).toLocaleDateString() : 'N/A'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Offer Status</div>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      selectedCandidate.joiningStatus === 'joined' || selectedCandidate.offerStatus === 'Joined'
+                        ? 'bg-green-100 text-green-800'
+                        : selectedCandidate.joiningStatus === 'not_joined' || selectedCandidate.offerStatus === 'Not Joined'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {selectedCandidate.joiningStatus === 'joined' ? 'Joined' :
+                       selectedCandidate.joiningStatus === 'not_joined' ? 'Not Joined' :
+                       selectedCandidate.offerStatus || 'Pending'}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Joining Status</div>
+                    <div className="text-gray-900 capitalize">{selectedCandidate.joiningStatus || 'N/A'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Information */}
+              {(selectedCandidate.reason || selectedCandidate.notes) && (
+                <div className="border-b pb-4">
+                  <h4 className="text-md font-semibold text-gray-900 mb-3">Additional Information</h4>
+                  {selectedCandidate.reason && (
+                    <div className="mb-3">
+                      <div className="text-sm text-gray-500">Reason</div>
+                      <div className="text-gray-900">{selectedCandidate.reason}</div>
+                    </div>
+                  )}
+                  {selectedCandidate.notes && (
+                    <div>
+                      <div className="text-sm text-gray-500">Notes</div>
+                      <div className="text-gray-900">{selectedCandidate.notes}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* System Information */}
+              <div>
+                <h4 className="text-md font-semibold text-gray-900 mb-3">System Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-500">Record ID</div>
+                    <div className="text-gray-900 text-xs font-mono break-all">{selectedCandidate._id || selectedCandidate.id || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Employer ID</div>
+                    <div className="text-gray-900 text-xs font-mono break-all">{selectedCandidate.employerId || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Created At</div>
+                    <div className="text-gray-900">
+                      {selectedCandidate.createdAt ? new Date(selectedCandidate.createdAt).toLocaleString() : 'N/A'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Last Updated</div>
+                    <div className="text-gray-900">
+                      {selectedCandidate.updatedAt ? new Date(selectedCandidate.updatedAt).toLocaleString() : 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="border-t px-6 py-4 flex justify-end gap-2 sticky bottom-0 bg-white">
+              <button onClick={closeCandidateView} className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

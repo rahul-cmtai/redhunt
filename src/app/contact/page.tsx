@@ -74,7 +74,7 @@ export default function ContactUs() {
               <span className="text-brand">Help</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Have questions about RedHunt? Our team is ready to assist you with demos, 
+              Have questions about Red-Flagged? Our team is ready to assist you with demos, 
               pricing, or any other inquiries.
             </p>
           </div>
@@ -91,8 +91,8 @@ export default function ContactUs() {
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Us</h3>
               <p className="text-gray-600 text-sm mb-3">Drop us a line anytime</p>
-              <a href="mailto:support@redhunt.com" className="text-brand hover:text-brand-700 font-medium text-sm">
-                support@redhunt.com
+              <a href="mailto:support@red-flagged.com" className="text-brand hover:text-brand-700 font-medium text-sm">
+                support@red-flagged.com
               </a>
             </div>
 
@@ -345,10 +345,10 @@ export default function ContactUs() {
           <div className="space-y-4">
             <details className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all cursor-pointer">
               <summary className="font-semibold text-gray-900 text-lg">
-                How does RedHunt verify candidate information?
+                How does Red-Flagged verify candidate information?
               </summary>
               <p className="mt-4 text-gray-600 leading-relaxed">
-                RedHunt uses a network of verified employers who share candidate data in our secure platform. 
+                Red-Flagged uses a network of verified employers who share candidate data in our secure platform. 
                 When you search for a candidate, we cross-reference our database to provide you with their 
                 verified employment history, offer acceptance records, and joining patterns.
               </p>
@@ -376,10 +376,10 @@ export default function ContactUs() {
 
             <details className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all cursor-pointer">
               <summary className="font-semibold text-gray-900 text-lg">
-                Can I integrate RedHunt with my existing ATS?
+                Can I integrate Red-Flagged with my existing ATS?
               </summary>
               <p className="mt-4 text-gray-600 leading-relaxed">
-                Yes! RedHunt offers API integration with popular ATS platforms like Greenhouse, Lever, and Workday. 
+                Yes! Red-Flagged offers API integration with popular ATS platforms like Greenhouse, Lever, and Workday. 
                 Our team will help you set up seamless integration during onboarding.
               </p>
             </details>

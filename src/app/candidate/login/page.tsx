@@ -45,7 +45,7 @@ export default function CandidateLogin() {
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <Link href="/" className="text-3xl font-bold text-red-600">RedHunt</Link>
+          <Link href="/" className="text-3xl font-bold text-red-600">Red-Flagged</Link>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">Candidate Login</h2>
           <p className="mt-2 text-sm text-gray-600">Approved candidates can sign in to access the dashboard</p>
         </div>
@@ -112,7 +112,7 @@ export default function CandidateLogin() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300" /></div>
-              <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500">New to RedHunt?</span></div>
+              <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500">New to Red-Flagged?</span></div>
             </div>
             <div className="mt-6">
               <Link href="/candidate/register" className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">Create Candidate Account</Link>
@@ -123,7 +123,7 @@ export default function CandidateLogin() {
         {/* Trust Messages */}
         <div className="text-center">
           <p className="text-sm text-gray-600">Accounts must be approved by an admin before login.</p>
-          <p className="text-sm text-gray-500 mt-2">Your data is encrypted and protected on RedHunt.</p>
+          <p className="text-sm text-gray-500 mt-2">Your data is encrypted and protected on Red-Flagged.</p>
         </div>
 
         {/* Back to Home */}

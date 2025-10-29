@@ -11,7 +11,7 @@ export default function Footer() {
             {/* Company Info */}
             <div className="space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-red-400 mb-4">RedHunt</h3>
+                <h3 className="text-2xl font-bold text-red-400 mb-4">Red-Flagged</h3>
                 <p className="text-gray-300 leading-relaxed">
                   The leading B2B verification platform that helps employers make smarter hiring decisions with verified candidate data.
                 </p>
@@ -69,7 +69,7 @@ export default function Footer() {
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="h-5 w-5 text-red-400" />
-                  <span className="text-gray-300">support@redhunt.com</span>
+                  <span className="text-gray-300">support@red-flagged.com</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <MapPin className="h-5 w-5 text-red-400" />
@@ -82,7 +82,7 @@ export default function Footer() {
           <div className="border-t border-gray-800 mt-12 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="text-gray-400 text-sm">
-                © 2025 RedHunt Technologies Pvt. Ltd. All rights reserved.
+                © 2025 Red-Flagged Technologies Pvt. Ltd. All rights reserved.
               </div>
               <div className="flex space-x-6 mt-4 md:mt-0">
                 <Link href="#privacy" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</Link>
@@ -92,7 +92,7 @@ export default function Footer() {
             </div>
             <div className="mt-4 text-center">
               <p className="text-gray-500 text-sm">
-                <span className="text-red-400 font-semibold">RedHunt</span> - Transparency. Trust. Talent.
+                <span className="text-red-400 font-semibold">Red-Flagged</span> - Transparency. Trust. Talent.
               </p>
             </div>
           </div>
@@ -106,7 +106,7 @@ export default function Footer() {
             {/* Company Info */}
             <div className="space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-red-400 mb-4">RedHunt</h3>
+                <h3 className="text-2xl font-bold text-red-400 mb-4">Red-Flagged</h3>
                 <p className="text-gray-300 leading-relaxed">
                   The leading B2B verification platform that helps employers make smarter hiring decisions with verified candidate data.
                 </p>
@@ -164,7 +164,7 @@ export default function Footer() {
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="h-5 w-5 text-red-400" />
-                  <span className="text-gray-300">support@redhunt.com</span>
+                  <span className="text-gray-300">support@red-flagged.com</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <MapPin className="h-5 w-5 text-red-400" />
@@ -177,7 +177,7 @@ export default function Footer() {
           <div className="border-t border-gray-800 mt-12 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="text-gray-400 text-sm">
-                © 2025 RedHunt Technologies Pvt. Ltd. All rights reserved.
+                © 2025 Red-Flagged Technologies Pvt. Ltd. All rights reserved.
               </div>
               <div className="flex space-x-6 mt-4 md:mt-0">
                 <Link href="#privacy" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</Link>
@@ -187,7 +187,7 @@ export default function Footer() {
             </div>
             <div className="mt-4 text-center">
               <p className="text-gray-500 text-sm">
-                <span className="text-red-400 font-semibold">RedHunt</span> - Transparency. Trust. Talent.
+                <span className="text-red-400 font-semibold">Red-Flagged</span> - Transparency. Trust. Talent.
               </p>
             </div>
           </div>

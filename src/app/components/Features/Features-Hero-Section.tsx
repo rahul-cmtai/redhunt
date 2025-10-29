@@ -111,7 +111,7 @@ export default function FeaturesHeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
           >
-            Discover the powerful features that make RedHunt the leading candidate verification platform trusted by industry leaders worldwide.
+            Discover the powerful features that make Red-Flagged the leading candidate verification platform trusted by industry leaders worldwide.
           </motion.p>
 
           {/* Feature Stats */}

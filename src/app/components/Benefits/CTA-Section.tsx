@@ -104,7 +104,7 @@ export default function BenefitsCTASection() {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            Join 500+ companies already saving time and money with RedHunt
+            Join 500+ companies already saving time and money with Red-Flagged
           </motion.p>
 
           <motion.div 

@@ -10,7 +10,7 @@ const testimonials = [
     company: "Tech Innovations Pvt Ltd",
     image: "👨‍💼",
     rating: 5,
-    text: "RedHunt helped us identify a candidate who had accepted 3 offers in the past 6 months but never joined. This saved us from a costly hiring mistake!",
+    text: "Red-Flagged helped us identify a candidate who had accepted 3 offers in the past 6 months but never joined. This saved us from a costly hiring mistake!",
     gradient: "from-blue-500 to-cyan-500"
   },
   {
@@ -19,7 +19,7 @@ const testimonials = [
     company: "Digital Solutions Inc",
     image: "👩‍💼",
     rating: 5,
-    text: "We discovered a candidate was blacklisted by 2 companies for unprofessional conduct. RedHunt's database is a game-changer for recruitment!",
+    text: "We discovered a candidate was Red-flagged by 2 companies for unprofessional conduct. Red-Flagged's database is a game-changer for recruitment!",
     gradient: "from-purple-500 to-pink-500"
   },
   {
@@ -28,7 +28,7 @@ const testimonials = [
     company: "StartupXYZ",
     image: "👨‍💻",
     rating: 5,
-    text: "The transparency RedHunt provides is unmatched. We now verify every candidate's history before making an offer. Our hiring success rate improved by 70%!",
+    text: "The transparency Red-Flagged provides is unmatched. We now verify every candidate's history before making an offer. Our hiring success rate improved by 70%!",
     gradient: "from-green-500 to-emerald-500"
   },
   {
@@ -37,7 +37,7 @@ const testimonials = [
     company: "Global Tech Corp",
     image: "👩‍💼",
     rating: 5,
-    text: "Found out a candidate had accepted offers from 5 companies in 4 months and ghosted all of them. RedHunt saved us time, money, and frustration!",
+    text: "Found out a candidate had accepted offers from 5 companies in 4 months and ghosted all of them. Red-Flagged saved us time, money, and frustration!",
     gradient: "from-red-500 to-orange-500"
   },
   {
@@ -46,7 +46,7 @@ const testimonials = [
     company: "Enterprise Solutions",
     image: "👨‍💼",
     rating: 5,
-    text: "RedHunt's blacklist verification helped us avoid hiring someone with a history of data theft. This platform is essential for every HR team!",
+    text: "Red-Flagged's Red-flagged verification helped us avoid hiring someone with a history of data theft. This platform is essential for every HR team!",
     gradient: "from-indigo-500 to-purple-500"
   },
   {
@@ -55,7 +55,7 @@ const testimonials = [
     company: "Innovation Labs",
     image: "👩‍💻",
     rating: 5,
-    text: "We verified a candidate who had 4 no-show records. RedHunt's data prevented what would have been our worst hire. Absolutely worth it!",
+    text: "We verified a candidate who had 4 no-show records. Red-Flagged's data prevented what would have been our worst hire. Absolutely worth it!",
     gradient: "from-yellow-500 to-orange-500"
   },
   {
@@ -64,7 +64,7 @@ const testimonials = [
     company: "Mega Corp Industries",
     image: "👨‍💼",
     rating: 5,
-    text: "The platform revealed a pattern of offer-hoarding behavior we wouldn't have caught otherwise. RedHunt is now mandatory in our hiring process!",
+    text: "The platform revealed a pattern of offer-hoarding behavior we wouldn't have caught otherwise. Red-Flagged is now mandatory in our hiring process!",
     gradient: "from-teal-500 to-cyan-500"
   },
   {
@@ -73,7 +73,7 @@ const testimonials = [
     company: "Growth Ventures",
     image: "👩‍💼",
     rating: 5,
-    text: "Found a candidate blacklisted for violating NDAs at previous companies. RedHunt's verification saved us from a potential legal nightmare!",
+    text: "Found a candidate Red-flagged for violating NDAs at previous companies. Red-Flagged's verification saved us from a potential legal nightmare!",
     gradient: "from-pink-500 to-red-500"
   }
 ]
@@ -103,7 +103,7 @@ export default function Testimonial() {
             Trusted by <span className="bg-gradient-to-r from-brand to-red-600 bg-clip-text text-transparent">200+ HR Leaders</span>
           </h2>
           <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto px-4">
-            See how RedHunt is helping companies avoid bad hires and reduce recruitment risks
+            See how Red-Flagged is helping companies avoid bad hires and reduce recruitment risks
           </p>
         </motion.div>
       </div>

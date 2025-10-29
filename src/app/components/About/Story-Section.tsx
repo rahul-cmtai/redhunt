@@ -18,13 +18,13 @@ export default function StorySection() {
     {
       number: '2',
       title: 'The Solution',
-      description: 'We created RedHunt - a platform where employers could share and access verified candidate data, revealing patterns of no-shows, offer dropouts, and unreliable candidates before making hiring decisions.',
+      description: 'We created Red-Flagged - a platform where employers could share and access verified candidate data, revealing patterns of no-shows, offer dropouts, and unreliable candidates before making hiring decisions.',
       gradient: 'from-blue-500 to-cyan-500'
     },
     {
       number: '3',
       title: 'The Impact',
-      description: 'Today, over 500+ companies trust RedHunt to verify 50,000+ candidates annually. We\'ve helped organizations reduce hiring risks by 70% and save millions in recruitment costs.',
+      description: 'Today, over 500+ companies trust Red-Flagged to verify 50,000+ candidates annually. We\'ve helped organizations reduce hiring risks by 70% and save millions in recruitment costs.',
       gradient: 'from-green-500 to-emerald-500'
     }
   ]
@@ -54,7 +54,7 @@ export default function StorySection() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Our Story</h2>
-          <p className="text-xl text-gray-600">How RedHunt came to be</p>
+          <p className="text-xl text-gray-600">How Red-Flagged came to be</p>
         </motion.div>
         
         <div ref={ref} className="space-y-8">

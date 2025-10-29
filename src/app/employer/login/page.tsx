@@ -61,13 +61,13 @@ export default function EmployerLogin() {
         {/* Header */}
         <div className="text-center">
           <Link href="/" className="text-3xl font-bold text-red-600">
-            RedHunt
+            Red-Flagged
           </Link>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
             Employer Login
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Access your RedHunt employer dashboard
+            Access your Red-Flagged employer dashboard
           </p>
         </div>
 
@@ -169,7 +169,7 @@ export default function EmployerLogin() {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">New to RedHunt?</span>
+                <span className="px-2 bg-white text-gray-500">New to Red-Flagged?</span>
               </div>
             </div>
 
@@ -189,10 +189,10 @@ export default function EmployerLogin() {
         {/* Trust Messages */}
         <div className="text-center">
           <p className="text-sm text-gray-600">
-            Data shared on RedHunt is 100% encrypted and visible only to verified employers.
+            Data shared on Red-Flagged is 100% encrypted and visible only to verified employers.
           </p>
           <p className="text-sm text-gray-500 mt-2">
-            RedHunt helps you hire with confidence, backed by truth.
+            Red-Flagged helps you hire with confidence, backed by truth.
           </p>
         </div>
 

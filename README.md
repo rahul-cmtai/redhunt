@@ -1,6 +1,6 @@
-# RedHunt - Verify Before You Hire
+# Red-Flagged - Verify Before You Hire
 
-RedHunt is a B2B verification platform that lets employers track candidates who accept offers but fail to join — helping companies hire smarter and avoid repeated no-shows.
+Red-Flagged is a B2B verification platform that lets employers track candidates who accept offers but fail to join — helping companies hire smarter and avoid repeated no-shows.
 
 ## 🚀 Features
 
@@ -85,7 +85,7 @@ src/
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd redhunt
+   cd red-flagged
    ```
 
 2. **Install dependencies**
@@ -199,14 +199,14 @@ npm start
 ## 📞 Support
 
 For technical support or business inquiries:
-- **Email**: support@redhunt.com
+- **Email**: support@red-flagged.com
 - **Phone**: +91-XXXX-XXXXXX
-- **Website**: [redhunt.com](https://redhunt.com)
+- **Website**: [red-flagged.com](https://red-flagged.com)
 
 ## 📄 License
 
-© 2025 RedHunt Technologies Pvt. Ltd. All rights reserved.
+© 2025 Red-Flagged Technologies Pvt. Ltd. All rights reserved.
 
 ---
 
-**RedHunt** - *Transparency. Trust. Talent.*
+**Red-Flagged** - *Transparency. Trust. Talent.*

@@ -73,7 +73,7 @@ export default function BenefitsHeroSection() {
             whileHover={{ scale: 1.05 }}
           >
             <TrendingUp className="h-5 w-5 mr-2 text-red-400" />
-            The RedHunt Advantage
+            The Red-Flagged Advantage
           </motion.div>
 
           <motion.h1 
@@ -111,7 +111,7 @@ export default function BenefitsHeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
           >
-            Discover how RedHunt transforms your recruitment process, saves costs, 
+            Discover how Red-Flagged transforms your recruitment process, saves costs, 
             and helps you make confident hiring decisions backed by verified data.
           </motion.p>
 

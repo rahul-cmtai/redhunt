@@ -1,6 +1,6 @@
 'use client'
 
-import { Shield, Zap, BarChart3, Users, Target, Award } from 'lucide-react'
+import { Shield, Zap, BarChart3, Users, Target, Award, CheckCircle, TrendingUp, Database } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useRef } from 'react'
 import { useInView } from 'framer-motion'
@@ -12,50 +12,50 @@ export default function WhyChooseSection() {
   const features = [
     {
       icon: Shield,
-      title: '100% Secure & Encrypted',
-      description: 'All candidate data is encrypted and accessible only to verified employers. Your data privacy is our top priority.',
+      title: 'Comprehensive Background Checks',
+      description: 'Get detailed insights into candidate history, employment patterns, and reliability indicators to make informed decisions.',
       color: 'green',
       gradient: 'from-green-400 to-emerald-500'
     },
     {
-      icon: Zap,
-      title: 'Instant Verification',
-      description: 'Get candidate verification results in seconds, not days. Make informed hiring decisions quickly.',
-      color: 'yellow',
-      gradient: 'from-yellow-400 to-orange-500'
-    },
-    {
       icon: BarChart3,
-      title: 'Advanced Analytics',
-      description: 'Comprehensive insights into hiring patterns, candidate behavior, and recruitment trends.',
+      title: 'Advanced Pattern Analysis',
+      description: 'AI-powered analysis of hiring patterns, candidate behavior, and recruitment trends to predict success rates.',
       color: 'blue',
       gradient: 'from-blue-400 to-cyan-500'
     },
     {
-      icon: Users,
-      title: 'Network Effect',
-      description: 'Leverage verified data from thousands of employers to make better hiring decisions.',
-      color: 'purple',
-      gradient: 'from-purple-400 to-pink-500'
-    },
-    {
       icon: Target,
-      title: 'Reduce No-Shows',
-      description: 'Prevent repeated offer dropouts and save time and resources on unreliable candidates.',
+      title: 'Track Offer Letter Dropouts',
+      description: 'Identify candidates who accept offer letters but never join, preventing repeated hiring mistakes.',
       color: 'red',
       gradient: 'from-red-400 to-rose-500'
     },
     {
-      icon: Award,
-      title: 'Industry Recognition',
-      description: 'Trusted by leading companies and recognized for innovation in HR technology.',
+      icon: Database,
+      title: 'Shared Data Network',
+      description: 'Access verified data from thousands of employers to make smarter hiring decisions based on collective insights.',
+      color: 'purple',
+      gradient: 'from-purple-400 to-pink-500'
+    },
+    {
+      icon: TrendingUp,
+      title: 'Smarter Workforce',
+      description: 'Build a more reliable workforce by leveraging comprehensive data and pattern analysis for better candidate selection.',
       color: 'indigo',
       gradient: 'from-indigo-400 to-purple-500'
+    },
+    {
+      icon: Users,
+      title: 'Leading Companies Trust Us',
+      description: 'Join industry leaders who use Red-flagged.com to track unreliable candidates and access shared hiring intelligence.',
+      color: 'yellow',
+      gradient: 'from-yellow-400 to-orange-500'
     }
   ]
 
   return (
-    <section id="features" className="py-20 bg-gray-50 overflow-hidden">
+    <section id="features" className="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-100 overflow-hidden relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div 
           className="text-center mb-16"
@@ -65,10 +65,13 @@ export default function WhyChooseSection() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Why Choose RedHunt?
+            Why Choose Red-flagged.com?
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Built for modern HR teams who value transparency, efficiency, and data-driven decisions
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-6">
+            Make Better Hiring Decisions: Comprehensive Background Checks and Pattern Analysis for a Smarter Workforce
+          </p>
+          <p className="text-lg text-gray-500 max-w-4xl mx-auto">
+            Join leading companies using Red-flagged.com to track candidates who accept offer letters but never join, and access shared data on Red-flagged.com to make smarter hiring decisions
           </p>
         </motion.div>
         
@@ -76,18 +79,20 @@ export default function WhyChooseSection() {
           {features.map((feature, index) => (
             <motion.div 
               key={index}
-              className="bg-white p-8 rounded-xl shadow-sm hover:shadow-2xl transition-shadow relative overflow-hidden group"
-              initial={{ opacity: 0, y: 50 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+              className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 relative overflow-hidden group border border-gray-100"
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              animate={isInView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 50, scale: 0.9 }}
               transition={{ 
-                duration: 0.5, 
+                duration: 0.6, 
                 delay: index * 0.1,
                 type: "spring",
-                stiffness: 100
+                stiffness: 100,
+                damping: 15
               }}
               whileHover={{ 
-                y: -10,
-                transition: { duration: 0.3 }
+                y: -15,
+                scale: 1.02,
+                transition: { duration: 0.3, type: "spring", stiffness: 300 }
               }}
             >
               {/* Gradient Background on Hover */}
@@ -110,37 +115,57 @@ export default function WhyChooseSection() {
               />
 
               <motion.div 
-                className={`w-12 h-12 bg-${feature.color}-100 rounded-lg flex items-center justify-center mb-6 relative z-10`}
+                className={`w-16 h-16 bg-gradient-to-br ${feature.gradient} rounded-2xl flex items-center justify-center mb-6 relative z-10 shadow-lg`}
                 whileHover={{ 
-                  rotate: [0, -10, 10, -10, 0],
-                  scale: 1.1
+                  rotate: [0, -5, 5, -5, 0],
+                  scale: 1.15
                 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.6, type: "spring", stiffness: 200 }}
               >
                 <motion.div
                   animate={{
-                    y: [0, -5, 0]
+                    y: [0, -8, 0],
+                    scale: [1, 1.1, 1]
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    delay: index * 0.3,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <feature.icon className="h-8 w-8 text-white drop-shadow-lg" />
+                </motion.div>
+                
+                {/* Pulsing Ring */}
+                <motion.div
+                  className={`absolute inset-0 rounded-2xl border-2 border-white/30`}
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.5, 0, 0.5]
                   }}
                   transition={{
                     duration: 2,
                     repeat: Infinity,
-                    delay: index * 0.2,
-                    ease: "easeInOut"
+                    delay: index * 0.2
                   }}
-                >
-                  <feature.icon className={`h-6 w-6 text-${feature.color}-600`} />
-                </motion.div>
+                />
               </motion.div>
 
-              <h3 className="text-xl font-semibold text-gray-900 mb-4 relative z-10">
+              <motion.h3 
+                className="text-xl font-bold text-gray-900 mb-4 relative z-10 group-hover:text-gray-800 transition-colors duration-300"
+                initial={{ opacity: 0, y: 20 }}
+                animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                transition={{ duration: 0.5, delay: index * 0.1 + 0.2 }}
+              >
                 {feature.title}
-              </h3>
+              </motion.h3>
               
               <motion.p 
-                className="text-gray-600 leading-relaxed relative z-10"
-                initial={{ opacity: 0 }}
-                animate={isInView ? { opacity: 1 } : { opacity: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 + 0.3 }}
+                className="text-gray-600 leading-relaxed relative z-10 group-hover:text-gray-700 transition-colors duration-300"
+                initial={{ opacity: 0, y: 20 }}
+                animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                transition={{ duration: 0.6, delay: index * 0.1 + 0.4 }}
               >
                 {feature.description}
               </motion.p>
@@ -154,15 +179,41 @@ export default function WhyChooseSection() {
           ))}
         </div>
 
-        {/* Floating Elements */}
+        {/* Floating Background Elements */}
         <motion.div
-          className="absolute top-20 right-10 w-32 h-32 bg-brand/10 rounded-full blur-3xl"
+          className="absolute top-20 right-10 w-32 h-32 bg-red-400/10 rounded-full blur-3xl"
           animate={{
             y: [0, 50, 0],
             scale: [1, 1.2, 1],
           }}
           transition={{
             duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        
+        <motion.div
+          className="absolute bottom-20 left-10 w-40 h-40 bg-blue-400/10 rounded-full blur-3xl"
+          animate={{
+            y: [0, -30, 0],
+            scale: [1, 1.3, 1],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        
+        <motion.div
+          className="absolute top-1/2 left-1/4 w-24 h-24 bg-purple-400/10 rounded-full blur-2xl"
+          animate={{
+            x: [0, 30, 0],
+            y: [0, -20, 0],
+          }}
+          transition={{
+            duration: 12,
             repeat: Infinity,
             ease: "easeInOut"
           }}

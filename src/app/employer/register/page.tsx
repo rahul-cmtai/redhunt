@@ -61,24 +61,27 @@ export default function EmployerRegister() {
 
   const [formData, setFormData] = useState({
     companyName: '',
-    industry: '',
+    address: '',
+    panNumber: '',
     hrName: '',
+    designation: '',
     contactNumber: '',
     email: '',
-    companyCode: '',
     password: '',
     confirmPassword: ''
   })
 
   const validate = () => {
     if (!formData.companyName.trim()) return 'Company name is required'
-    if (!formData.industry.trim()) return 'Industry is required'
-    if (!formData.hrName.trim()) return 'HR name is required'
-    if (!formData.contactNumber.trim()) return 'Contact number is required'
-    if (!/^[0-9+\-()\s]{7,20}$/.test(formData.contactNumber.trim())) return 'Enter a valid contact number'
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) return 'Enter a valid email'
+    if (!formData.address.trim()) return 'Company address is required'
+    if (!formData.panNumber.trim()) return 'PAN number is required'
+    if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panNumber.trim())) return 'Enter a valid PAN number (e.g., ABCDE1234F)'
+    if (!formData.hrName.trim()) return 'Your name is required'
+    if (!formData.designation.trim()) return 'Designation is required'
+    if (!formData.contactNumber.trim()) return 'Mobile number is required'
+    if (!/^[0-9+\-()\s]{7,20}$/.test(formData.contactNumber.trim())) return 'Enter a valid mobile number'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) return 'Enter a valid corporate email'
     if (!isCorporateEmail(formData.email)) return 'Please use your corporate work email (e.g., name@yourcompany.com)'
-    if (!formData.companyCode.trim()) return 'Company code is required'
     if (formData.password.length < 6) return 'Password must be at least 6 characters'
     if (formData.password !== formData.confirmPassword) return 'Passwords do not match'
     return null
@@ -99,11 +102,12 @@ export default function EmployerRegister() {
         `${API_BASE_URL}/api/auth/employer/register`,
         {
           companyName: formData.companyName.trim(),
-          industry: formData.industry.trim(),
+          address: formData.address.trim(),
+          panNumber: formData.panNumber.trim(),
           hrName: formData.hrName.trim(),
+          designation: formData.designation.trim(),
           contactNumber: formData.contactNumber.trim(),
           email: formData.email.trim(),
-          companyCode: formData.companyCode.trim(),
           password: formData.password,
           // Helpful defaults and aliases in case backend expects them
           status: 'pending',
@@ -117,7 +121,7 @@ export default function EmployerRegister() {
       )
       // Move to OTP step after successful registration
       setIsOtpStep(true)
-      setSuccess('Account created. We sent a 6-digit OTP to your work email.')
+      setSuccess('Account created. OTP sent to your corporate email. After OTP verification and admin approval, you will be able to login.')
       return data
     } catch (err: any) {
       const message = err?.response?.data?.message || err?.message || 'Registration failed'
@@ -143,8 +147,8 @@ export default function EmployerRegister() {
         { headers: { 'Content-Type': 'application/json' } }
       )
       if (res?.data?.emailVerified) {
-        setSuccess('Email verified successfully. Redirecting to login...')
-        setTimeout(() => router.push('/employer/login'), 1200)
+        setSuccess('Email verified successfully. Your account is pending admin approval. You will be notified once approved.')
+        setTimeout(() => router.push('/employer/login'), 2000)
       } else {
         setError('Verification failed. Please check the OTP and try again.')
       }
@@ -167,10 +171,10 @@ export default function EmployerRegister() {
         { headers: { 'Content-Type': 'application/json' } }
       )
       if (res?.data?.emailVerified) {
-        setSuccess('Email already verified. Redirecting to login...')
+        setSuccess('Email already verified. Your account is pending admin approval.')
         setTimeout(() => router.push('/employer/login'), 1000)
       } else if (res?.data?.sent) {
-        setSuccess('OTP resent. Please check your inbox (and spam).')
+        setSuccess('OTP resent to your corporate email. Please check your inbox (and spam).')
       } else {
         setSuccess('If the email exists, a new OTP has been sent.')
       }
@@ -188,13 +192,13 @@ export default function EmployerRegister() {
         {/* Header */}
         <div className="text-center">
           <Link href="/" className="text-3xl font-bold text-red-600">
-            RedHunt
+            Red-Flagged
           </Link>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Create Employer Account
+            HR Panel Registration
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Start hiring with confidence
+            Register your company to start hiring with confidence
           </p>
         </div>
 
@@ -231,25 +235,42 @@ export default function EmployerRegister() {
             </div>
 
             <div>
-              <label htmlFor="industry" className="block text-sm font-medium text-gray-700">
-                Industry
+              <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+                Company Address
+              </label>
+              <textarea
+                id="address"
+                name="address"
+                required
+                rows={3}
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
+                placeholder="Complete company address with city, state, and pincode"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="panNumber" className="block text-sm font-medium text-gray-700">
+                PAN Number of the Company
               </label>
               <input
-                id="industry"
-                name="industry"
+                id="panNumber"
+                name="panNumber"
                 type="text"
                 required
-                value={formData.industry}
-                onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
-                placeholder="IT / Software"
+                value={formData.panNumber}
+                onChange={(e) => setFormData({ ...formData, panNumber: e.target.value.toUpperCase() })}
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm uppercase"
+                placeholder="ABCDE1234F"
+                maxLength={10}
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="hrName" className="block text-sm font-medium text-gray-700">
-                  HR Contact Name
+                  Your Name
                 </label>
                 <input
                   id="hrName"
@@ -263,25 +284,41 @@ export default function EmployerRegister() {
                 />
               </div>
               <div>
-                <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-700">
-                  Contact Number
+                <label htmlFor="designation" className="block text-sm font-medium text-gray-700">
+                  Designation
                 </label>
                 <input
-                  id="contactNumber"
-                  name="contactNumber"
-                  type="tel"
+                  id="designation"
+                  name="designation"
+                  type="text"
                   required
-                  value={formData.contactNumber}
-                  onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
+                  value={formData.designation}
+                  onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
                   className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
-                  placeholder="+91 98765 43210"
+                  placeholder="HR Manager"
                 />
               </div>
             </div>
 
             <div>
+              <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-700">
+                Mobile Number
+              </label>
+              <input
+                id="contactNumber"
+                name="contactNumber"
+                type="tel"
+                required
+                value={formData.contactNumber}
+                onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
+                placeholder="+91 98765 43210"
+              />
+            </div>
+
+            <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Work Email
+                Corporate Mail ID
               </label>
               <input
                 id="email"
@@ -293,22 +330,6 @@ export default function EmployerRegister() {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
                 placeholder="hr@yourcompany.com"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="companyCode" className="block text-sm font-medium text-gray-700">
-                Company Code
-              </label>
-              <input
-                id="companyCode"
-                name="companyCode"
-                type="text"
-                required
-                value={formData.companyCode}
-                onChange={(e) => setFormData({ ...formData, companyCode: e.target.value })}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
-                placeholder="RLT-09235"
               />
             </div>
 
@@ -460,10 +481,10 @@ export default function EmployerRegister() {
         {/* Trust Messages */}
         <div className="text-center">
           <p className="text-sm text-gray-600">
-            Data shared on RedHunt is encrypted and visible only to verified employers.
+            Data shared on Red-Flagged is encrypted and visible only to verified HR professionals.
           </p>
           <p className="text-sm text-gray-500 mt-2">
-            RedHunt helps you hire with confidence, backed by truth.
+            After OTP verification and admin approval, you can access the HR Panel to hire with confidence.
           </p>
         </div>
 

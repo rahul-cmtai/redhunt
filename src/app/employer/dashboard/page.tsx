@@ -10,12 +10,11 @@ import {
   TrendingUp, 
   Plus, 
   Search, 
-  FileText, 
-  Download,
   Settings,
   LogOut,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from 'lucide-react'
 
 type EmployerSearchResult = {
@@ -34,14 +33,31 @@ export default function EmployerDashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResult, setSearchResult] = useState<EmployerSearchResult | null>(null)
   const [searchLoading, setSearchLoading] = useState(false)
+  const [emailSearchQuery, setEmailSearchQuery] = useState('')
+  const [emailSearchResults, setEmailSearchResults] = useState<any[]>([])
+  const [emailSearchLoading, setEmailSearchLoading] = useState(false)
+  const [selectedCandidate, setSelectedCandidate] = useState<any>(null)
+  const [showCandidateModal, setShowCandidateModal] = useState(false)
   const [allCandidates, setAllCandidates] = useState<any[]>([])
   const [candidatesLoading, setCandidatesLoading] = useState(false)
+  const [candidateType, setCandidateType] = useState('all') // 'all', 'invited', 'verified'
+  const [candidateStats, setCandidateStats] = useState({
+    total: 0,
+    invited: 0,
+    verified: 0
+  })
   const [showAddForm, setShowAddForm] = useState(false)
   const [formData, setFormData] = useState({
+    // Essential Information Only
     fullName: '',
-    uan: '',
     email: '',
     phone: '',
+    uan: '',
+    panNumber: '',
+    designation: '',
+    currentCompany: '',
+    
+    // Offer Details
     jobRole: '',
     offerDate: '',
     offerStatus: '',
@@ -62,11 +78,12 @@ export default function EmployerDashboard() {
   // Company profile state
   const [profile, setProfile] = useState({
     companyName: '',
-    industry: '',
+    address: '',
+    panNumber: '',
     hrName: '',
+    designation: '',
     contactNumber: '',
     email: '',
-    companyCode: '',
     status: '',
     role: '',
     trustScore: 0,
@@ -80,16 +97,96 @@ export default function EmployerDashboard() {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
   const [editProfile, setEditProfile] = useState({
     companyName: '',
-    industry: '',
+    address: '',
+    panNumber: '',
     hrName: '',
+    designation: '',
     contactNumber: '',
-    email: '',
-    companyCode: ''
+    email: ''
   })
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
   const getEmployerToken = () => localStorage.getItem('employerToken') || sessionStorage.getItem('employerToken')
   const bulkInputRef = useRef<HTMLInputElement | null>(null)
+
+// Skills options for candidate form
+const SKILLS_OPTIONS = [
+  { value: 'javascript', label: 'JavaScript' },
+  { value: 'python', label: 'Python' },
+  { value: 'java', label: 'Java' },
+  { value: 'react', label: 'React' },
+  { value: 'angular', label: 'Angular' },
+  { value: 'vue', label: 'Vue.js' },
+  { value: 'nodejs', label: 'Node.js' },
+  { value: 'php', label: 'PHP' },
+  { value: 'csharp', label: 'C#' },
+  { value: 'cpp', label: 'C++' },
+  { value: 'sql', label: 'SQL' },
+  { value: 'mongodb', label: 'MongoDB' },
+  { value: 'aws', label: 'AWS' },
+  { value: 'azure', label: 'Azure' },
+  { value: 'docker', label: 'Docker' },
+  { value: 'kubernetes', label: 'Kubernetes' },
+  { value: 'devops', label: 'DevOps' },
+  { value: 'machine-learning', label: 'Machine Learning' },
+  { value: 'data-analysis', label: 'Data Analysis' },
+  { value: 'project-management', label: 'Project Management' },
+  { value: 'sales', label: 'Sales' },
+  { value: 'marketing', label: 'Marketing' },
+  { value: 'hr', label: 'Human Resources' },
+  { value: 'finance', label: 'Finance' },
+  { value: 'accounting', label: 'Accounting' },
+  { value: 'design', label: 'Design' },
+  { value: 'ui-ux', label: 'UI/UX Design' },
+  { value: 'content-writing', label: 'Content Writing' },
+  { value: 'digital-marketing', label: 'Digital Marketing' },
+  { value: 'other', label: 'Other' }
+]
+
+const RELOCATION_OPTIONS = [
+  { value: 'yes', label: 'Yes, open to relocation' },
+  { value: 'no', label: 'No, not open to relocation' },
+  { value: 'maybe', label: 'Maybe, depends on opportunity' }
+]
+
+// Block common free email providers to enforce corporate/work emails
+const FREE_EMAIL_DOMAINS = new Set([
+  'gmail.com',
+  'googlemail.com',
+  'yahoo.com',
+  'yahoo.co.in',
+  'outlook.com',
+  'hotmail.com',
+  'live.com',
+  'msn.com',
+  'icloud.com',
+  'me.com',
+  'aol.com',
+  'proton.me',
+  'protonmail.com',
+  'yandex.com',
+  'zoho.com',
+  'gmx.com',
+  'mail.com',
+  'inbox.com',
+  'rediffmail.com',
+  'qq.com',
+  '163.com',
+  'hey.com',
+  'duck.com'
+])
+
+function isCorporateEmail(email: string): boolean {
+  const trimmed = email.trim()
+  const atIndex = trimmed.lastIndexOf('@')
+  if (atIndex === -1) return false
+  const domain = trimmed.slice(atIndex + 1).toLowerCase()
+  if (!domain) return false
+  if (FREE_EMAIL_DOMAINS.has(domain)) return false
+  // Basic domain shape like company.com or sub.company.co.in
+  const domainLooksValid = /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)
+  return domainLooksValid
+}
 
   // Authentication check
   useEffect(() => {
@@ -109,6 +206,14 @@ export default function EmployerDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab])
 
+  // Load candidates when dashboard loads
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'dashboard') {
+      fetchAllCandidates()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, activeTab])
+
   // Show loading while checking authentication
   if (isAuthenticated === null) {
     return (
@@ -127,11 +232,61 @@ export default function EmployerDashboard() {
   }
 
   const dashboardStats = [
-    { title: 'Total Candidates Added', value: '245', icon: Users, color: 'blue' },
-    { title: 'Non-Joining Cases', value: '23', icon: UserX, color: 'red' },
-    { title: 'Verified Records', value: '198', icon: Shield, color: 'green' },
-    { title: 'Company Trust Score', value: '8.7/10', icon: TrendingUp, color: 'purple' }
+    { title: 'Total Candidates', value: candidateStats.total.toString(), icon: Users, color: 'blue' },
+    { title: 'Invited Candidates', value: candidateStats.invited.toString(), icon: UserX, color: 'orange' },
+    { title: 'Verified Candidates', value: candidateStats.verified.toString(), icon: Shield, color: 'green' },
+    { title: 'Company Trust Score', value: `${profile.trustScore}/10`, icon: TrendingUp, color: 'purple' }
   ]
+
+  const handleEmailSearch = async () => {
+    if (!emailSearchQuery.trim()) {
+      setError('Please enter an email address')
+      return
+    }
+
+    setEmailSearchLoading(true)
+    setError(null)
+    setEmailSearchResults([])
+
+    try {
+      const token = getEmployerToken()
+      if (!token) {
+        setError('Authentication required. Please login again.')
+        handleLogout()
+        return
+      }
+
+      // Search by email in all candidates
+      const { data } = await axios.get(`${API_BASE_URL}/api/employer/candidates/all`, {
+        params: { search: emailSearchQuery.trim() },
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (data.success && data.candidates && data.candidates.length > 0) {
+        setEmailSearchResults(data.candidates)
+      } else {
+        setEmailSearchResults([])
+      }
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        setError('Session expired. Please login again.')
+        handleLogout()
+      } else if (err?.code === 'ECONNREFUSED' || err?.message?.includes('Network Error')) {
+        setError('Unable to connect to server. Please check if the API server is running.')
+      } else {
+        const msg = err?.response?.data?.message || err?.message || 'Email search failed'
+        setError(msg)
+      }
+      setEmailSearchResults([])
+    } finally {
+      setEmailSearchLoading(false)
+    }
+  }
+
+  const handleViewCandidate = (candidate: any) => {
+    setSelectedCandidate(candidate)
+    setShowCandidateModal(true)
+  }
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -142,6 +297,7 @@ export default function EmployerDashboard() {
     setSearchLoading(true)
     setError(null)
     setSearchResult(null)
+    setEmailSearchResults([])
 
     try {
       const token = getEmployerToken()
@@ -151,26 +307,32 @@ export default function EmployerDashboard() {
         return
       }
 
-      // Normalize UAN-like queries to uppercase (emails/phones remain unchanged)
-      const rawQuery = searchQuery.trim()
-      const isUanLike = /^uan[-\s]?\d+$/i.test(rawQuery)
-      const normalizedQuery = isUanLike ? rawQuery.toUpperCase() : rawQuery
+      // Search in all candidates first
+      const { data: allData } = await axios.get(`${API_BASE_URL}/api/employer/candidates/all`, {
+        params: { search: searchQuery.trim() },
+        headers: { Authorization: `Bearer ${token}` }
+      })
 
-      // Use the dedicated search endpoint
+      if (allData.success && allData.candidates && allData.candidates.length > 0) {
+        setEmailSearchResults(allData.candidates)
+      }
+
+      // Also search in the verification database
+      const normalizedQuery = searchQuery.trim()
       const { data } = await axios.get(`${API_BASE_URL}/api/employer/candidates/search`, {
         params: { q: normalizedQuery },
         headers: { Authorization: `Bearer ${token}` }
       })
 
       if (data && data.length > 0) {
-        // Process the search results
-        const candidate = data[0] // Take the first match
+        // Process the search results for verification info
+        const candidate = data[0]
         const offers = data.length
         const notJoined = data.filter((c: any) => c.joiningStatus === 'not_joined' || c.offerStatus === 'Not Joined').length
         const lastOffer = data[data.length - 1]
         
-    setSearchResult({
-      found: true,
+        setSearchResult({
+          found: true,
           candidate: candidate.name || 'Unknown',
           offers: offers,
           notJoined: notJoined,
@@ -178,7 +340,7 @@ export default function EmployerDashboard() {
           lastDate: lastOffer?.offerDate ? new Date(lastOffer.offerDate).toLocaleDateString() : 'Unknown',
           verifiedBy: new Set(data.map((c: any) => c.employerId || c.employerName)).size
         })
-      } else {
+      } else if (!allData.success || !allData.candidates || allData.candidates.length === 0) {
         setSearchResult({
           found: false,
           candidate: '',
@@ -200,6 +362,7 @@ export default function EmployerDashboard() {
         setError(msg)
       }
       setSearchResult(null)
+      setEmailSearchResults([])
     } finally {
       setSearchLoading(false)
     }
@@ -225,10 +388,16 @@ export default function EmployerDashboard() {
       }
 
       const payload = {
+        // Essential Information
         name: formData.fullName.trim(),
-        uan: formData.uan?.trim().toUpperCase() || undefined,
         email: formData.email.trim(),
         mobile: formData.phone?.trim() || undefined,
+        uan: formData.uan?.trim().toUpperCase() || undefined,
+        panNumber: formData.panNumber?.trim().toUpperCase() || undefined,
+        designation: formData.designation?.trim() || undefined,
+        currentCompany: formData.currentCompany?.trim() || undefined,
+        
+        // Offer Details
         position: formData.jobRole.trim(),
         offerDate: formData.offerDate || undefined,
         offerStatus: formData.offerStatus || undefined,
@@ -237,17 +406,59 @@ export default function EmployerDashboard() {
         notes: formData.notes?.trim() || undefined,
         joiningStatus: mapOfferToJoining(formData.offerStatus)
       }
+      
+      // First, add the candidate to the backend
       await axios.post(`${API_BASE_URL}/api/employer/candidates`, payload, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         }
       })
-      setMessage('Record added successfully.')
+
+      // Then send invitation email
+      try {
+        const emailPayload = {
+          candidateName: formData.fullName.trim(),
+          candidateEmail: formData.email.trim(),
+          employerName: 'Your Company', // You might want to get this from employer profile
+          position: formData.jobRole.trim(),
+          offerDate: formData.offerDate || undefined
+        }
+
+        const emailResponse = await axios.post('/api/send-candidate-invitation', emailPayload, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+
+        if (emailResponse.data.success) {
+          setMessage('Non-joining candidate reported successfully and notification sent to candidate!')
+        } else {
+          setMessage('Non-joining candidate reported successfully, but failed to send notification email.')
+        }
+      } catch (emailError) {
+        console.error('Email sending failed:', emailError)
+        setMessage('Non-joining candidate reported successfully, but failed to send notification email.')
+      }
+
       setShowAddForm(false)
       setFormData({
-        fullName: '', uan: '', email: '', phone: '', jobRole: '',
-        offerDate: '', offerStatus: '', joiningDate: '', reason: '', notes: ''
+        // Essential Information Only
+        fullName: '',
+        email: '',
+        phone: '',
+        uan: '',
+        panNumber: '',
+        designation: '',
+        currentCompany: '',
+        
+        // Offer Details
+        jobRole: '',
+        offerDate: '',
+        offerStatus: '',
+        joiningDate: '',
+        reason: '',
+        notes: ''
       })
     } catch (err: any) {
       if (err?.response?.status === 401) {
@@ -409,6 +620,9 @@ export default function EmployerDashboard() {
         return
       }
 
+      let successCount = 0
+      let emailSentCount = 0
+
       for (const candidate of mappedData) {
         const payload = {
           name: candidate.fullName?.trim() || '',
@@ -424,15 +638,42 @@ export default function EmployerDashboard() {
           joiningStatus: mapOfferToJoining(candidate.offerStatus)
         }
         
+        // Add candidate to backend
         await axios.post(`${API_BASE_URL}/api/employer/candidates`, payload, {
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`
           }
         })
+        successCount++
+
+        // Send invitation email if email is provided
+        if (candidate.email?.trim()) {
+          try {
+            const emailPayload = {
+              candidateName: candidate.fullName?.trim() || 'Candidate',
+              candidateEmail: candidate.email.trim(),
+              employerName: 'Your Company', // You might want to get this from employer profile
+              position: candidate.jobRole?.trim() || 'Position',
+              offerDate: candidate.offerDate || undefined
+            }
+
+            const emailResponse = await axios.post('/api/send-candidate-invitation', emailPayload, {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            })
+
+            if (emailResponse.data.success) {
+              emailSentCount++
+            }
+          } catch (emailError) {
+            console.error('Email sending failed for candidate:', candidate.email, emailError)
+          }
+        }
       }
       
-      setMessage(`Successfully added ${mappedData.length} candidates.`)
+      setMessage(`Successfully added ${successCount} candidates. Invitation emails sent to ${emailSentCount} candidates.`)
       setMappedData([])
       setCsvData([])
       setCsvHeaders([])
@@ -453,7 +694,7 @@ export default function EmployerDashboard() {
     }
   }
 
-  const fetchAllCandidates = async () => {
+  const fetchAllCandidates = async (type = 'all', search = '') => {
     setCandidatesLoading(true)
     setError(null)
 
@@ -465,11 +706,25 @@ export default function EmployerDashboard() {
         return
       }
 
-      const { data } = await axios.get(`${API_BASE_URL}/api/employer/candidates`, {
+      const params = new URLSearchParams()
+      if (search) params.append('search', search)
+      if (type !== 'all') params.append('type', type)
+
+      const { data } = await axios.get(`${API_BASE_URL}/api/employer/candidates/all?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
 
-      setAllCandidates(data || [])
+      if (data.success) {
+        setAllCandidates(data.candidates || [])
+        setCandidateStats({
+          total: data.total || 0,
+          invited: data.invited || 0,
+          verified: data.verified || 0
+        })
+      } else {
+        setAllCandidates([])
+        setCandidateStats({ total: 0, invited: 0, verified: 0 })
+      }
     } catch (err: any) {
       if (err?.response?.status === 401) {
         setError('Session expired. Please login again.')
@@ -480,6 +735,8 @@ export default function EmployerDashboard() {
         const msg = err?.response?.data?.message || err?.message || 'Failed to fetch candidates'
         setError(msg)
       }
+      setAllCandidates([])
+      setCandidateStats({ total: 0, invited: 0, verified: 0 })
     } finally {
       setCandidatesLoading(false)
     }
@@ -501,11 +758,12 @@ export default function EmployerDashboard() {
       })
       setProfile({
         companyName: data.companyName || '',
-        industry: data.industry || '',
+        address: data.address || '',
+        panNumber: data.panNumber || '',
         hrName: data.hrName || '',
+        designation: data.designation || '',
         contactNumber: data.contactNumber || '',
         email: data.email || '',
-        companyCode: data.companyCode || '',
         status: data.status || '',
         role: data.role || '',
         trustScore: typeof data.trustScore === 'number' ? data.trustScore : 0,
@@ -531,6 +789,49 @@ export default function EmployerDashboard() {
     e.preventDefault()
     setProfileError(null)
     setProfileSuccess(null)
+    
+    // Validation
+    if (!editProfile.companyName.trim()) {
+      setProfileError('Company name is required')
+      return
+    }
+    if (!editProfile.address.trim()) {
+      setProfileError('Company address is required')
+      return
+    }
+    if (!editProfile.panNumber.trim()) {
+      setProfileError('PAN number is required')
+      return
+    }
+    if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(editProfile.panNumber.trim())) {
+      setProfileError('Enter a valid PAN number (e.g., ABCDE1234F)')
+      return
+    }
+    if (!editProfile.hrName.trim()) {
+      setProfileError('Your name is required')
+      return
+    }
+    if (!editProfile.designation.trim()) {
+      setProfileError('Designation is required')
+      return
+    }
+    if (!editProfile.contactNumber.trim()) {
+      setProfileError('Mobile number is required')
+      return
+    }
+    if (!/^[0-9+\-()\s]{7,20}$/.test(editProfile.contactNumber.trim())) {
+      setProfileError('Enter a valid mobile number')
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editProfile.email)) {
+      setProfileError('Enter a valid corporate email')
+      return
+    }
+    if (!isCorporateEmail(editProfile.email)) {
+      setProfileError('Please use your corporate work email (e.g., name@yourcompany.com)')
+      return
+    }
+    
     setSavingProfile(true)
     try {
       const token = getEmployerToken()
@@ -541,11 +842,12 @@ export default function EmployerDashboard() {
       }
       const payload: any = {
         companyName: editProfile.companyName?.trim() || undefined,
-        industry: editProfile.industry?.trim() || undefined,
+        address: editProfile.address?.trim() || undefined,
+        panNumber: editProfile.panNumber?.trim() || undefined,
         hrName: editProfile.hrName?.trim() || undefined,
+        designation: editProfile.designation?.trim() || undefined,
         contactNumber: editProfile.contactNumber?.trim() || undefined,
-        email: editProfile.email?.trim() || undefined,
-        companyCode: editProfile.companyCode?.trim() || undefined
+        email: editProfile.email?.trim() || undefined
       }
       await axios.put(`${API_BASE_URL}/api/employer/profile`, payload, {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
@@ -579,51 +881,51 @@ export default function EmployerDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-red-600">RedHunt</h1>
-              <span className="ml-4 text-sm text-gray-500">Employer Portal</span>
+      <header className="bg-white shadow-sm border-b sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <div className="flex items-center min-w-0">
+              <h1 className="text-lg sm:text-2xl font-bold text-red-600 truncate">Red-Flagged</h1>
+              <span className="hidden sm:inline ml-2 sm:ml-4 text-xs sm:text-sm text-gray-500 whitespace-nowrap">Employer Portal</span>
             </div>
-            <div className="flex items-center space-x-4">
-              <button className="text-gray-700 hover:text-red-600 p-2">
+            <div className="flex items-center space-x-1 sm:space-x-3">
+              <button className="hidden sm:block text-gray-700 hover:text-red-600 p-2">
                 <Settings className="h-5 w-5" />
               </button>
               <button 
                 onClick={handleLogout}
-                className="text-gray-700 hover:text-red-600 p-2"
+                className="text-gray-700 hover:text-red-600 p-1.5 sm:p-2"
                 title="Logout"
               >
-                <LogOut className="h-5 w-5" />
+                <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg shadow-sm mb-8">
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
+        <div className="bg-white rounded-lg shadow-sm mb-6 sm:mb-8">
+          <div className="border-b border-gray-200 overflow-x-auto">
+            <nav className="flex space-x-4 sm:space-x-8 px-3 sm:px-6 min-w-max">
               {[
-                { id: 'dashboard', label: 'Dashboard' },
-                { id: 'add', label: 'Add Candidate' },
-                { id: 'search', label: 'Verify Candidate' },
-                { id: 'reports', label: 'Reports' },
-                { id: 'profile', label: 'Company Profile' }
+                { id: 'dashboard', label: 'Dashboard', shortLabel: 'Home' },
+                { id: 'add', label: 'Add Candidate', shortLabel: 'Add' },
+                { id: 'search', label: 'Verify Candidate', shortLabel: 'Verify' },
+                { id: 'profile', label: 'Company Profile', shortLabel: 'Profile' }
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  className={`py-3 sm:py-4 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'border-red-500 text-red-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  {tab.label}
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.shortLabel}</span>
                 </button>
               ))}
             </nav>
@@ -634,7 +936,7 @@ export default function EmployerDashboard() {
         {activeTab === 'dashboard' && (
           <div>
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to RedHunt Dashboard</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to Red-Flagged Dashboard</h2>
               <p className="text-gray-600">Manage your candidate records and verify joining history.</p>
             </div>
 
@@ -703,8 +1005,8 @@ export default function EmployerDashboard() {
         {activeTab === 'add' && (
           <div>
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Add Candidate Details</h2>
-              <p className="text-gray-600">Enter candidate information for every job offer made.</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Report Non-Joining Candidate</h2>
+              <p className="text-gray-600">Add details of candidates who took offer letters but didn't join or are blacklisted for not joining after accepting offers.</p>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm p-6">
@@ -715,6 +1017,7 @@ export default function EmployerDashboard() {
                 <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
               )}
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Essential Information */}
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -725,19 +1028,6 @@ export default function EmployerDashboard() {
                       value={formData.fullName}
                       onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                       placeholder="e.g. Rajesh Kumar"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      UAN / Unique ID *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.uan}
-                      onChange={(e) => setFormData({...formData, uan: e.target.value.toUpperCase()})}
-                      placeholder="e.g. UAN-854392"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                       required
                     />
@@ -770,7 +1060,56 @@ export default function EmployerDashboard() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Job Role / Department *
+                      UAN Number
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.uan}
+                      onChange={(e) => setFormData({...formData, uan: e.target.value.toUpperCase()})}
+                      placeholder="e.g. 123456789012"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      PAN Number
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.panNumber}
+                      onChange={(e) => setFormData({...formData, panNumber: e.target.value.toUpperCase()})}
+                      placeholder="e.g. ABCDE1234F"
+                      maxLength={10}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 uppercase"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Current Designation
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.designation}
+                      onChange={(e) => setFormData({...formData, designation: e.target.value})}
+                      placeholder="e.g. Senior Software Engineer"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Current Company
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.currentCompany}
+                      onChange={(e) => setFormData({...formData, currentCompany: e.target.value})}
+                      placeholder="e.g. Tech Solutions Pvt Ltd"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Job Role / Position *
                     </label>
                     <input
                       type="text"
@@ -804,11 +1143,13 @@ export default function EmployerDashboard() {
                       required
                     >
                       <option value="">Select Status</option>
-                      <option value="Offered">Offered</option>
-                      <option value="Accepted">Accepted</option>
-                      <option value="Rejected">Rejected</option>
-                      <option value="Joined">Joined</option>
-                      <option value="Not Joined">Not Joined</option>
+                      <option value="Offer Letter Given">Offer Letter Given</option>
+                      <option value="Offer Accepted">Offer Accepted</option>
+                      <option value="Offer Rejected">Offer Rejected</option>
+                      <option value="Not Joined After Acceptance">Not Joined After Acceptance</option>
+                      <option value="Ghosted After Offer">Ghosted After Offer</option>
+                      <option value="Joined But Left Early">Joined But Left Early</option>
+                      <option value="Blacklisted">Blacklisted</option>
                     </select>
                   </div>
                   <div>
@@ -826,25 +1167,40 @@ export default function EmployerDashboard() {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Reason for Not Joining (Optional)
+                    Reason for Not Joining *
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.reason}
                     onChange={(e) => setFormData({...formData, reason: e.target.value})}
-                    placeholder="e.g. Accepted another offer"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
+                    required
+                  >
+                    <option value="">Select Reason</option>
+                    <option value="Accepted Another Offer">Accepted Another Offer</option>
+                    <option value="Counter Offer from Current Company">Counter Offer from Current Company</option>
+                    <option value="Salary Expectations Not Met">Salary Expectations Not Met</option>
+                    <option value="Location Not Suitable">Location Not Suitable</option>
+                    <option value="Family Issues">Family Issues</option>
+                    <option value="Health Issues">Health Issues</option>
+                    <option value="No Response After Acceptance">No Response After Acceptance</option>
+                    <option value="Ghosted Completely">Ghosted Completely</option>
+                    <option value="Asked for More Time Then Disappeared">Asked for More Time Then Disappeared</option>
+                    <option value="Joined But Left Within 1 Month">Joined But Left Within 1 Month</option>
+                    <option value="Joined But Left Within 3 Months">Joined But Left Within 3 Months</option>
+                    <option value="Performance Issues">Performance Issues</option>
+                    <option value="Misrepresented Information">Misrepresented Information</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Notes
+                    Additional Notes
                   </label>
                   <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                    placeholder="e.g. Candidate promised to join but didn't report"
+                    placeholder="Provide additional details about the incident..."
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
@@ -894,40 +1250,42 @@ export default function EmployerDashboard() {
         {/* Search/Verify Tab */}
         {activeTab === 'search' && (
           <div>
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Verify Candidate Record</h2>
-              <p className="text-gray-600">Check if a candidate has rejected previous offers or view all your candidates.</p>
+            <div className="mb-6 sm:mb-8">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Verify Candidate Record</h2>
+              <p className="text-sm sm:text-base text-gray-600">Check if a candidate has rejected previous offers or view all your candidates.</p>
             </div>
 
             {/* Search Section */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6">
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Search Candidate
                 </label>
-                <div className="flex space-x-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Enter UAN / Email / Phone Number"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm sm:text-base"
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                   />
                   <button
                     onClick={handleSearch}
                     disabled={searchLoading}
-                    className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 flex items-center disabled:opacity-70"
+                    className="bg-red-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-red-700 flex items-center justify-center disabled:opacity-70 text-sm sm:text-base"
                   >
                     {searchLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Searching...
+                        <span className="hidden sm:inline">Searching...</span>
+                        <span className="sm:hidden">Search</span>
                       </>
                     ) : (
                       <>
-                    <Search className="h-5 w-5 mr-2" />
-                    Search
+                        <Search className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                        <span className="hidden sm:inline">Search</span>
+                        <span className="sm:hidden">Search</span>
                       </>
                     )}
                   </button>
@@ -940,34 +1298,65 @@ export default function EmployerDashboard() {
                 </div>
               )}
 
-              {searchResult && searchResult.found && (
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <div className="flex items-center mb-4">
-                    <Search className="h-5 w-5 text-green-500 mr-2" />
-                    <span className="font-semibold text-gray-900">Candidate Found</span>
-                  </div>
-                  
+              {/* Search Results */}
+              {emailSearchResults.length > 0 && (
+                <div className="mt-6 mb-6">
+                  <h4 className="text-sm sm:text-md font-semibold text-gray-900 mb-3">Search Results ({emailSearchResults.length})</h4>
                   <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Name:</span>
-                      <span className="font-medium">{searchResult.candidate}</span>
+                    {emailSearchResults.map((candidate, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h5 className="font-medium text-gray-900 text-sm sm:text-base truncate">{candidate.name}</h5>
+                            <p className="text-xs sm:text-sm text-gray-600 truncate">{candidate.email}</p>
+                            <p className="text-xs sm:text-sm text-gray-500">
+                              {candidate.position} • {candidate.offerStatus}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              Added: {new Date(candidate.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleViewCandidate(candidate)}
+                            className="bg-green-600 text-white px-3 py-1 rounded text-xs sm:text-sm hover:bg-green-700 self-start sm:self-auto"
+                          >
+                            View Details
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {searchResult && searchResult.found && (
+                <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
+                  <div className="flex items-center mb-4">
+                    <Search className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2" />
+                    <span className="font-semibold text-gray-900 text-sm sm:text-base">Candidate Found</span>
+                  </div>
+                  
+                  <div className="space-y-2 sm:space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                      <span className="text-gray-600 text-xs sm:text-sm">Name:</span>
+                      <span className="font-medium text-xs sm:text-sm">{searchResult.candidate}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Previous Offers:</span>
-                      <span className="font-medium">{searchResult.offers} total, {searchResult.notJoined} not joined</span>
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                      <span className="text-gray-600 text-xs sm:text-sm">Previous Offers:</span>
+                      <span className="font-medium text-xs sm:text-sm">{searchResult.offers} total, {searchResult.notJoined} not joined</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Last Offer:</span>
-                      <span className="font-medium">{searchResult.lastCompany} ({searchResult.lastDate})</span>
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                      <span className="text-gray-600 text-xs sm:text-sm">Last Offer:</span>
+                      <span className="font-medium text-xs sm:text-sm">{searchResult.lastCompany} ({searchResult.lastDate})</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Verified by:</span>
-                      <span className="font-medium">{searchResult.verifiedBy} employers</span>
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                      <span className="text-gray-600 text-xs sm:text-sm">Verified by:</span>
+                      <span className="font-medium text-xs sm:text-sm">{searchResult.verifiedBy} employers</span>
                     </div>
                   </div>
                   
-                  <div className="mt-6">
-                    <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                  <div className="mt-4 sm:mt-6">
+                    <button className="bg-red-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-red-700 text-xs sm:text-sm w-full sm:w-auto">
                       Add this candidate to your company records
                     </button>
                   </div>
@@ -976,180 +1365,241 @@ export default function EmployerDashboard() {
 
               {searchResult && !searchResult.found && searchQuery && (
                 <div className="bg-gray-50 rounded-lg p-6 text-center">
-                  <p className="text-gray-600">No matching record found in RedHunt database.</p>
+                  <p className="text-gray-600">No matching record found in Red-Flagged database.</p>
                 </div>
               )}
             </div>
 
             {/* All Candidates Section */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex justify-between items-center mb-6">
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Your Candidates</h3>
-                  <p className="text-gray-600">View all candidates you've added to the system</p>
-          </div>
-                <button
-                  onClick={fetchAllCandidates}
-                  disabled={candidatesLoading}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center disabled:opacity-70"
-                >
-                  {candidatesLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Loading...
-                    </>
-                  ) : (
-                    <>
-                      <Users className="h-4 w-4 mr-2" />
-                      Load Candidates
-                    </>
-                  )}
-                </button>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">All Candidates</h3>
+                  <p className="text-xs sm:text-sm text-gray-600">View invited and verified candidates</p>
+                </div>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                  <select
+                    value={candidateType}
+                    onChange={(e) => {
+                      setCandidateType(e.target.value)
+                      fetchAllCandidates(e.target.value)
+                    }}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-xs sm:text-sm"
+                  >
+                    <option value="all">All Candidates</option>
+                    <option value="invited">Invited Only</option>
+                    <option value="verified">Verified Only</option>
+                  </select>
+                  <button
+                    onClick={() => fetchAllCandidates(candidateType)}
+                    disabled={candidatesLoading}
+                    className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center disabled:opacity-70 text-xs sm:text-sm"
+                  >
+                    {candidatesLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-white mr-2"></div>
+                        <span className="hidden sm:inline">Loading...</span>
+                        <span className="sm:hidden">Load</span>
+                      </>
+                    ) : (
+                      <>
+                        <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                        <span className="hidden sm:inline">Refresh</span>
+                        <span className="sm:hidden">Refresh</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {allCandidates.length > 0 && (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Email
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Position
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Offer Date
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          UAN
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {allCandidates.map((candidate, index) => (
-                        <tr key={candidate._id || candidate.id || index} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{candidate.name}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {candidate.email}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {candidate.position || '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              candidate.joiningStatus === 'joined' || candidate.offerStatus === 'Joined'
-                                ? 'bg-green-100 text-green-800'
-                                : candidate.joiningStatus === 'not_joined' || candidate.offerStatus === 'Not Joined'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {candidate.joiningStatus === 'joined' ? 'Joined' :
-                               candidate.joiningStatus === 'not_joined' ? 'Not Joined' :
-                               candidate.offerStatus || 'Pending'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {candidate.offerDate ? new Date(candidate.offerDate).toLocaleDateString() : '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {candidate.uan || '-'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <>
+                  {/* Desktop Table View */}
+                  <div className="hidden lg:block overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Type
+                            </th>
+                            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Name
+                            </th>
+                            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Email
+                            </th>
+                            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Mobile
+                            </th>
+                            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              UAN/PAN
+                            </th>
+                            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Details
+                            </th>
+                            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Status
+                            </th>
+                            <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Action
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {allCandidates.map((candidate, index) => (
+                            <tr key={candidate.id || candidate._id || index} className="hover:bg-gray-50">
+                              <td className="px-3 py-4 whitespace-nowrap">
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                  candidate.type === 'verified' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-blue-100 text-blue-800'
+                                }`}>
+                                  {candidate.type === 'verified' ? 'Verified' : 'Invited'}
+                                </span>
+                              </td>
+                              <td className="px-3 py-4 whitespace-nowrap">
+                                <div className="text-sm font-medium text-gray-900 truncate">{candidate.name}</div>
+                              </td>
+                              <td className="px-3 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900 truncate">{candidate.email || candidate.primaryEmail || '-'}</div>
+                              </td>
+                              <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {candidate.mobile || '-'}
+                              </td>
+                              <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {candidate.type === 'verified' ? (candidate.pan || '-') : (candidate.uan || '-')}
+                              </td>
+                              <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {candidate.type === 'verified' ? (
+                                  <div>
+                                    <div className="truncate">{candidate.designation || '-'}</div>
+                                    <div className="text-xs text-gray-500 truncate">{candidate.presentCompany || '-'}</div>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <div className="truncate">{candidate.position || '-'}</div>
+                                    <div className="text-xs text-gray-500">
+                                      {candidate.offerDate ? new Date(candidate.offerDate).toLocaleDateString() : '-'}
+                                    </div>
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-3 py-4 whitespace-nowrap">
+                                {candidate.type === 'verified' ? (
+                                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    Verified
+                                  </span>
+                                ) : (
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                  candidate.joiningStatus === 'joined' || candidate.offerStatus === 'Joined'
+                                    ? 'bg-green-100 text-green-800'
+                                    : candidate.joiningStatus === 'not_joined' || candidate.offerStatus === 'Not Joined'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                  {candidate.joiningStatus === 'joined' ? 'Joined' :
+                                   candidate.joiningStatus === 'not_joined' ? 'Not Joined' :
+                                   candidate.offerStatus || 'Pending'}
+                                </span>
+                                )}
+                              </td>
+                              <td className="px-3 py-4 whitespace-nowrap">
+                                <button
+                                  onClick={() => handleViewCandidate(candidate)}
+                                  className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700"
+                                >
+                                  View
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Mobile Card View */}
+                  <div className="lg:hidden space-y-3">
+                    {allCandidates.map((candidate, index) => (
+                      <div key={candidate.id || candidate._id || index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-gray-900 text-sm truncate">{candidate.name}</h4>
+                            <p className="text-xs text-gray-600 truncate">{candidate.email || candidate.primaryEmail || '-'}</p>
+                          </div>
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ml-2 ${
+                            candidate.type === 'verified' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {candidate.type === 'verified' ? 'Verified' : 'Invited'}
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                          <div>
+                            <span className="text-gray-500">Mobile:</span>
+                            <p className="text-gray-900">{candidate.mobile || '-'}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">UAN/PAN:</span>
+                            <p className="text-gray-900">{candidate.type === 'verified' ? (candidate.pan || '-') : (candidate.uan || '-')}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="text-xs mb-3">
+                          <span className="text-gray-500">Details:</span>
+                          <p className="text-gray-900">
+                            {candidate.type === 'verified' 
+                              ? `${candidate.designation || '-'} • ${candidate.presentCompany || '-'}`
+                              : `${candidate.position || '-'} • ${candidate.offerDate ? new Date(candidate.offerDate).toLocaleDateString() : '-'}`
+                            }
+                          </p>
+                        </div>
+                        
+                        <div className="flex justify-between items-center">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            candidate.type === 'verified' 
+                              ? 'bg-green-100 text-green-800'
+                              : candidate.joiningStatus === 'joined' || candidate.offerStatus === 'Joined'
+                              ? 'bg-green-100 text-green-800'
+                              : candidate.joiningStatus === 'not_joined' || candidate.offerStatus === 'Not Joined'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {candidate.type === 'verified' 
+                              ? 'Verified'
+                              : candidate.joiningStatus === 'joined' 
+                                ? 'Joined' 
+                                : candidate.joiningStatus === 'not_joined' 
+                                  ? 'Not Joined' 
+                                  : candidate.offerStatus || 'Pending'
+                            }
+                          </span>
+                          <button
+                            onClick={() => handleViewCandidate(candidate)}
+                            className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700"
+                          >
+                            View Details
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
 
               {allCandidates.length === 0 && !candidatesLoading && (
-                <div className="text-center py-8 text-gray-500">
-                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p>No candidates found. Click "Load Candidates" to fetch your records.</p>
+                <div className="text-center py-6 sm:py-8 text-gray-500">
+                  <Users className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                  <p className="text-sm sm:text-base">No candidates found. Click "Refresh" to fetch your records.</p>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Reports Tab */}
-        {activeTab === 'reports' && (
-          <div>
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Hiring Insights</h2>
-              <p className="text-gray-600">Track offer trends and candidate joining behavior.</p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Offer Acceptance Rate</h3>
-                <p className="text-3xl font-bold text-green-600">78%</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Non-Joining Percentage</h3>
-                <p className="text-3xl font-bold text-red-600">22%</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Top Dropout Position</h3>
-                <p className="text-lg font-bold text-gray-900">Software Engineer</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Monthly Trend</h3>
-                <p className="text-lg font-bold text-blue-600">+12%</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Analytics Dashboard</h3>
-                <div className="flex space-x-2">
-                  <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export CSV
-                  </button>
-                  <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Export PDF
-                  </button>
-                </div>
-              </div>
-              
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Top 5 Positions with Most Dropouts</h4>
-                  <div className="space-y-2">
-                    {['Software Engineer', 'Data Analyst', 'Marketing Manager', 'Sales Executive', 'HR Specialist'].map((position, index) => (
-                      <div key={index} className="flex justify-between items-center">
-                        <span className="text-gray-600">{position}</span>
-                        <span className="font-medium">{15 - index}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Monthly Joining Trends</h4>
-                  <div className="space-y-2">
-                    {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((month, index) => (
-                      <div key={index} className="flex justify-between items-center">
-                        <span className="text-gray-600">{month}</span>
-                        <span className="font-medium">{65 + index * 5}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Company Profile Tab */}
         {activeTab === 'profile' && (
@@ -1178,24 +1628,28 @@ export default function EmployerDashboard() {
                     <div className="text-gray-900 font-medium">{profile.companyName || '-'}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-500">Industry</div>
-                    <div className="text-gray-900 font-medium">{profile.industry || '-'}</div>
+                    <div className="text-sm text-gray-500">PAN Number</div>
+                    <div className="text-gray-900 font-medium">{profile.panNumber || '-'}</div>
+                  </div>
+                  <div className="md:col-span-2">
+                    <div className="text-sm text-gray-500">Company Address</div>
+                    <div className="text-gray-900 font-medium">{profile.address || '-'}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-500">HR Contact</div>
+                    <div className="text-sm text-gray-500">Your Name</div>
                     <div className="text-gray-900 font-medium">{profile.hrName || '-'}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-500">Official Email</div>
-                    <div className="text-gray-900 font-medium break-words">{profile.email || '-'}</div>
+                    <div className="text-sm text-gray-500">Designation</div>
+                    <div className="text-gray-900 font-medium">{profile.designation || '-'}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-500">Contact Number</div>
+                    <div className="text-sm text-gray-500">Mobile Number</div>
                     <div className="text-gray-900 font-medium">{profile.contactNumber || '-'}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-500">Company Code</div>
-                    <div className="text-gray-900 font-medium">{profile.companyCode || '-'}</div>
+                    <div className="text-sm text-gray-500">Corporate Mail ID</div>
+                    <div className="text-gray-900 font-medium break-words">{profile.email || '-'}</div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-500">Status</div>
@@ -1253,16 +1707,28 @@ export default function EmployerDashboard() {
                     />
                   </div>
                   <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Industry</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">PAN Number</label>
                     <input
                       type="text"
-                          value={editProfile.industry}
-                          onChange={(e) => setEditProfile({ ...editProfile, industry: e.target.value })}
+                          value={editProfile.panNumber}
+                          onChange={(e) => setEditProfile({ ...editProfile, panNumber: e.target.value.toUpperCase() })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 uppercase"
+                          placeholder="ABCDE1234F"
+                          maxLength={10}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Company Address</label>
+                        <textarea
+                          value={editProfile.address}
+                          onChange={(e) => setEditProfile({ ...editProfile, address: e.target.value })}
+                          rows={3}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                          placeholder="Complete company address with city, state, and pincode"
                     />
                   </div>
                   <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">HR Contact</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Your Name</label>
                     <input
                       type="text"
                           value={editProfile.hrName}
@@ -1271,16 +1737,16 @@ export default function EmployerDashboard() {
                     />
                   </div>
                   <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Official Email</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Designation</label>
                     <input
-                      type="email"
-                          value={editProfile.email}
-                          onChange={(e) => setEditProfile({ ...editProfile, email: e.target.value })}
+                          type="text"
+                          value={editProfile.designation}
+                          onChange={(e) => setEditProfile({ ...editProfile, designation: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     />
                   </div>
                   <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Mobile Number</label>
                     <input
                           type="tel"
                           value={editProfile.contactNumber}
@@ -1289,28 +1755,204 @@ export default function EmployerDashboard() {
                     />
                   </div>
                   <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Company Code</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Corporate Mail ID</label>
                     <input
-                      type="text"
-                          value={editProfile.companyCode}
-                          onChange={(e) => setEditProfile({ ...editProfile, companyCode: e.target.value })}
+                          type="email"
+                          value={editProfile.email}
+                          onChange={(e) => setEditProfile({ ...editProfile, email: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     />
                   </div>
                 </div>
-                    <div className="border-t pt-4 flex justify-end gap-2">
-                      <button type="button" onClick={() => setIsEditProfileOpen(false)} className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50">Cancel</button>
-                      <button type="submit" disabled={savingProfile} className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 disabled:opacity-70">
-                        {savingProfile ? 'Saving...' : 'Save Changes'}
-                </button>
-                    </div>
+                <div className="border-t pt-4 flex justify-end gap-2">
+                  <button type="button" onClick={() => setIsEditProfileOpen(false)} className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50">Cancel</button>
+                  <button type="submit" disabled={savingProfile} className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 disabled:opacity-70">
+                    {savingProfile ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
               </form>
             </div>
-              </div>
-            )}
+          </div>
+        )}
           </div>
         )}
       </div>
+
+      {/* Candidate Details Modal */}
+      {showCandidateModal && selectedCandidate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Candidate Details</h2>
+                <button
+                  onClick={() => setShowCandidateModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Basic Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Basic Information</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                      <p className="text-gray-900">{selectedCandidate.name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Email</label>
+                      <p className="text-gray-900">{selectedCandidate.email || selectedCandidate.primaryEmail || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Mobile</label>
+                      <p className="text-gray-900">{selectedCandidate.mobile || selectedCandidate.phone || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">UAN Number</label>
+                      <p className="text-gray-900">{selectedCandidate.uan || selectedCandidate.uanNumber || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">PAN Number</label>
+                      <p className="text-gray-900">{selectedCandidate.panNumber || selectedCandidate.pan || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Professional Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Professional Information</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Current Designation</label>
+                      <p className="text-gray-900">{selectedCandidate.designation || selectedCandidate.currentDesignation || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Current Company</label>
+                      <p className="text-gray-900">{selectedCandidate.currentCompany || selectedCandidate.presentCompany || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Job Role/Position</label>
+                      <p className="text-gray-900">{selectedCandidate.position || selectedCandidate.jobRole || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Offer Status</label>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        selectedCandidate.offerStatus === 'Not Joined After Acceptance' || 
+                        selectedCandidate.offerStatus === 'Ghosted After Offer' ||
+                        selectedCandidate.offerStatus === 'Blacklisted'
+                          ? 'bg-red-100 text-red-800'
+                          : selectedCandidate.offerStatus === 'Joined'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {selectedCandidate.offerStatus || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Offer Details */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Offer Details</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Offer Date</label>
+                      <p className="text-gray-900">
+                        {selectedCandidate.offerDate ? new Date(selectedCandidate.offerDate).toLocaleDateString() : 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Joining Date</label>
+                      <p className="text-gray-900">
+                        {selectedCandidate.joiningDate ? new Date(selectedCandidate.joiningDate).toLocaleDateString() : 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Reason for Not Joining</label>
+                      <p className="text-gray-900">{selectedCandidate.reason || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Joining Status</label>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        selectedCandidate.joiningStatus === 'not_joined'
+                          ? 'bg-red-100 text-red-800'
+                          : selectedCandidate.joiningStatus === 'joined'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {selectedCandidate.joiningStatus || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Additional Information</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Added By</label>
+                      <p className="text-gray-900">{selectedCandidate.employerName || selectedCandidate.addedBy || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Verification Status</label>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        selectedCandidate.verified || selectedCandidate.type === 'verified' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {selectedCandidate.verified || selectedCandidate.type === 'verified' ? 'Verified' : 'Pending Verification'}
+                      </span>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Created Date</label>
+                      <p className="text-gray-900">
+                        {selectedCandidate.createdAt ? new Date(selectedCandidate.createdAt).toLocaleDateString() : 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Last Updated</label>
+                      <p className="text-gray-900">
+                        {selectedCandidate.updatedAt ? new Date(selectedCandidate.updatedAt).toLocaleDateString() : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes Section */}
+              {selectedCandidate.notes && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-3">Additional Notes</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-900 whitespace-pre-wrap">{selectedCandidate.notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="mt-8 flex justify-end space-x-4">
+                <button
+                  onClick={() => setShowCandidateModal(false)}
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    // Add logic to add this candidate to current employer's records
+                    console.log('Add candidate to records:', selectedCandidate)
+                  }}
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                  Add to My Records
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

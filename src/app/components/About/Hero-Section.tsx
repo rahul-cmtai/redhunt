@@ -73,7 +73,7 @@ export default function AboutHeroSection() {
             whileHover={{ scale: 1.05 }}
           >
             <Globe className="h-5 w-5 mr-2 text-red-400" />
-            About RedHunt
+            About Red-Flagged
           </motion.div>
 
           <motion.h1 

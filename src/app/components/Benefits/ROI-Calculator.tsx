@@ -61,7 +61,7 @@ export default function ROICalculator() {
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Calculate Your Savings
           </h2>
-          <p className="text-xl text-gray-600">See how much RedHunt can save your organization</p>
+          <p className="text-xl text-gray-600">See how much Red-Flagged can save your organization</p>
         </motion.div>
 
         <motion.div 

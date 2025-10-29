@@ -19,10 +19,10 @@ export default function VideoSection() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            See RedHunt in Action
+            See Red-Flagged in Action
           </h2>
           <p className="text-xl text-gray-600">
-            Watch how RedHunt transforms your hiring process in just 2 minutes
+            Watch how Red-Flagged transforms your hiring process in just 2 minutes
           </p>
         </motion.div>
         

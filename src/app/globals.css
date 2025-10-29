@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+/* Prevent horizontal scrolling and ensure full width */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
