@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 import { useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { TrendingUp, Users, Shield, Star } from 'lucide-react'
@@ -196,14 +197,16 @@ export default function StatsSection() {
           <p className="text-lg text-gray-600 mb-6">
             Ready to join these companies and make smarter hiring decisions?
           </p>
-          <motion.div
-            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <TrendingUp className="h-5 w-5 mr-2" />
-            Start Your Free Trial
-          </motion.div>
+          <Link href="/employer/register" className="inline-block">
+            <motion.div
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <TrendingUp className="h-5 w-5 mr-2" />
+              Check red-flagged database
+            </motion.div>
+          </Link>
         </motion.div>
       </div>
     </section>

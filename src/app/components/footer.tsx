@@ -39,11 +39,9 @@ export default function Footer() {
             <div>
               <h4 className="text-lg font-semibold mb-6">Product</h4>
               <ul className="space-y-3">
-                <li><Link href="#features" className="text-gray-300 hover:text-white transition-colors">Features</Link></li>
-                <li><Link href="#pricing" className="text-gray-300 hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/demo" className="text-gray-300 hover:text-white transition-colors">Demo</Link></li>
-                <li><Link href="#api" className="text-gray-300 hover:text-white transition-colors">API Documentation</Link></li>
-                <li><Link href="#integrations" className="text-gray-300 hover:text-white transition-colors">Integrations</Link></li>
+                <li><Link href="/How-Its-Work" className="text-gray-300 hover:text-white transition-colors">How it works</Link></li>
+                <li><Link href="/benefits" className="text-gray-300 hover:text-white transition-colors">Benefits</Link></li>
+                <li><Link href="/features" className="text-gray-300 hover:text-white transition-colors">Features</Link></li>
               </ul>
             </div>
 
@@ -51,11 +49,10 @@ export default function Footer() {
             <div>
               <h4 className="text-lg font-semibold mb-6">Company</h4>
               <ul className="space-y-3">
-                <li><Link href="#about" className="text-gray-300 hover:text-white transition-colors">About Us</Link></li>
-                <li><Link href="#careers" className="text-gray-300 hover:text-white transition-colors">Careers</Link></li>
-                <li><Link href="#blog" className="text-gray-300 hover:text-white transition-colors">Blog</Link></li>
-                <li><Link href="#press" className="text-gray-300 hover:text-white transition-colors">Press</Link></li>
-                <li><Link href="#partners" className="text-gray-300 hover:text-white transition-colors">Partners</Link></li>
+                <li><Link href="/about" className="text-gray-300 hover:text-white transition-colors">About Us</Link></li>
+                <li><Link href="/contact" className="text-gray-300 hover:text-white transition-colors">Contact</Link></li>
+                <li><Link href="/employer/login" className="text-gray-300 hover:text-white transition-colors">Employer Login</Link></li>
+                <li><Link href="/candidate/login" className="text-gray-300 hover:text-white transition-colors">Candidate Login</Link></li>
               </ul>
             </div>
 
@@ -134,11 +131,9 @@ export default function Footer() {
             <div>
               <h4 className="text-lg font-semibold mb-6">Product</h4>
               <ul className="space-y-3">
-                <li><Link href="#features" className="text-gray-300 hover:text-white transition-colors">Features</Link></li>
-                <li><Link href="#pricing" className="text-gray-300 hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/demo" className="text-gray-300 hover:text-white transition-colors">Demo</Link></li>
-                <li><Link href="#api" className="text-gray-300 hover:text-white transition-colors">API Documentation</Link></li>
-                <li><Link href="#integrations" className="text-gray-300 hover:text-white transition-colors">Integrations</Link></li>
+                <li><Link href="/How-Its-Work" className="text-gray-300 hover:text-white transition-colors">How it works</Link></li>
+                <li><Link href="/benefits" className="text-gray-300 hover:text-white transition-colors">Benefits</Link></li>
+                <li><Link href="/features" className="text-gray-300 hover:text-white transition-colors">Features</Link></li>
               </ul>
             </div>
 
@@ -146,11 +141,10 @@ export default function Footer() {
             <div>
               <h4 className="text-lg font-semibold mb-6">Company</h4>
               <ul className="space-y-3">
-                <li><Link href="#about" className="text-gray-300 hover:text-white transition-colors">About Us</Link></li>
-                <li><Link href="#careers" className="text-gray-300 hover:text-white transition-colors">Careers</Link></li>
-                <li><Link href="#blog" className="text-gray-300 hover:text-white transition-colors">Blog</Link></li>
-                <li><Link href="#press" className="text-gray-300 hover:text-white transition-colors">Press</Link></li>
-                <li><Link href="#partners" className="text-gray-300 hover:text-white transition-colors">Partners</Link></li>
+                <li><Link href="/about" className="text-gray-300 hover:text-white transition-colors">About Us</Link></li>
+                <li><Link href="/contact" className="text-gray-300 hover:text-white transition-colors">Contact</Link></li>
+                <li><Link href="/employer/login" className="text-gray-300 hover:text-white transition-colors">Employer Login</Link></li>
+                <li><Link href="/candidate/login" className="text-gray-300 hover:text-white transition-colors">Candidate Login</Link></li>
               </ul>
             </div>
 

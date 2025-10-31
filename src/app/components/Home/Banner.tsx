@@ -19,10 +19,10 @@ export default function Banner() {
           backgroundImage: 'url("https://images.unsplash.com/photo-1521791055366-0d553872125f?q=80&w=1920&auto=format&fit=crop")'
         }}
       />
-      {/* Soft White Overlay (improves text contrast) */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/90 via-white/85 to-white/75" />
-      {/* Light Red Tint (hover strengthens to brand red) */}
-      <div className="absolute inset-0 bg-gradient-to-br from-red-500/15 via-red-500/10 to-red-600/15 opacity-100 group-hover:opacity-35 transition-opacity duration-500" />
+      {/* Soft Light Overlay (keeps image while ensuring contrast) */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/85 via-white/80 to-white/70" />
+      {/* Brand Red Tint (slightly stronger on hover) */}
+      <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 via-rose-500/15 to-red-600/20 opacity-100 group-hover:opacity-40 transition-opacity duration-500" />
       {/* Animated Background Elements */}
       <motion.div
         className="absolute inset-0 opacity-10"
@@ -41,9 +41,9 @@ export default function Banner() {
         }}
       />
       
-      {/* Floating Circles */}
+      {/* Floating Circles in brand hue */}
       <motion.div
-        className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"
+        className="absolute top-10 left-10 w-32 h-32 bg-red-500/10 rounded-full blur-2xl"
         animate={{
           y: [0, -30, 0],
           scale: [1, 1.2, 1],
@@ -55,7 +55,7 @@ export default function Banner() {
         }}
       />
       <motion.div
-        className="absolute bottom-10 right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"
+        className="absolute bottom-10 right-10 w-40 h-40 bg-rose-500/10 rounded-full blur-2xl"
         animate={{
           y: [0, 30, 0],
           scale: [1, 1.3, 1],
@@ -97,7 +97,7 @@ export default function Banner() {
         transition={{ duration: 0.8, staggerChildren: 0.15, delayChildren: 0.2 }}
       >
         <motion.h2 
-          className="text-3xl md:text-5xl font-bold text-red-600 mb-6"
+          className="text-3xl md:text-5xl font-extrabold text-red-600 mb-6"
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
           transition={{ duration: 0.6 }}
@@ -120,7 +120,7 @@ export default function Banner() {
         </motion.h2>
 
         <motion.p 
-          className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto"
+          className="text-lg sm:text-xl text-gray-700 mb-8 max-w-2xl mx-auto"
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
           transition={{ duration: 0.6, delay: 0.2 }}
@@ -140,8 +140,8 @@ export default function Banner() {
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
     <Link 
-      href="#contact" 
-              className="relative bg-white text-red-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors inline-flex items-center justify-center group overflow-hidden shadow-xl"
+      href="/contact" 
+              className="relative bg-white text-red-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-red-50 transition-colors inline-flex items-center justify-center group overflow-hidden shadow-xl ring-1 ring-red-200/60"
             >
               <motion.span
                 className="absolute inset-0 bg-gradient-to-r from-red-50 to-white"
@@ -168,16 +168,16 @@ export default function Banner() {
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
     <Link 
-      href="/contact" 
-              className="relative border-2 border-white text-red-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white/10 transition-colors inline-flex items-center justify-center group overflow-hidden shadow-xl"
+      href="/employer/login" 
+              className="relative border-2 border-red-600/80 text-red-700 px-8 py-4 rounded-lg text-lg font-semibold bg-white/70 backdrop-blur hover:bg-white/90 transition-colors inline-flex items-center justify-center group overflow-hidden shadow-xl"
             >
               <motion.span
-                className="absolute inset-0 bg-white/20"
+                className="absolute inset-0 bg-red-500/10"
                 initial={{ scale: 0, opacity: 0 }}
                 whileHover={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
               />
-              <span className="relative z-10">View Red-flagged Database</span>
+              <span className="relative z-10">Check Red-flagged Database</span>
     </Link>
           </motion.div>
         </motion.div>
@@ -213,16 +213,16 @@ export default function Banner() {
                   repeatDelay: 5
                 }}
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon className="h-5 w-5 text-red-600" />
               </motion.div>
               <span className="font-medium">{item.text}</span>
             </motion.div>
           ))}
         </motion.div>
 
-        {/* Pulsing Border Effect */}
+        {/* Pulsing Border Effect in brand tone */}
         <motion.div
-          className="absolute inset-0 border-4 border-white/20 rounded-3xl pointer-events-none"
+          className="absolute inset-0 border-4 border-red-500/20 rounded-3xl pointer-events-none"
           animate={{
             scale: [1, 1.02, 1],
             opacity: [0.2, 0.4, 0.2]

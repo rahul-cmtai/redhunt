@@ -82,7 +82,7 @@ export default function AboutHeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            Transforming Hiring with{' '}
+            Hire with Trust, Verify with{' '}
             <motion.span 
               className="relative inline-block"
               animate={{
@@ -101,18 +101,17 @@ export default function AboutHeroSection() {
                 backgroundClip: 'text',
               }}
             >
-              Trust & Transparency
+              Red-flagged.com
             </motion.span>
           </motion.h1>
 
           <motion.p 
-            className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed drop-shadow-lg"
+            className="text-xl text-white/90 max-w-4xl mx-auto leading-relaxed drop-shadow-lg"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
           >
-            We&apos;re on a mission to revolutionize recruitment by providing employers with verified candidate data, 
-            reducing hiring risks and building a trustworthy talent ecosystem.
+            "With Red-flagged, you can verify candidate history, identify potential red flags, and hire with confidence. Our goal is to transform the hiring process, one background check at a time. By providing accurate and reliable information, we help businesses like yours thrive."
           </motion.p>
 
           {/* Feature Stats */}
@@ -123,8 +122,8 @@ export default function AboutHeroSection() {
             transition={{ duration: 0.6, delay: 0.7 }}
           >
             {[
-              { icon: '🏢', label: '500+ Companies', gradientClass: 'gradient-red-pink' },
-              { icon: '✅', label: '50K+ Verified', gradientClass: 'gradient-blue-cyan' },
+              { icon: '🏢', label: '100+ Companies', gradientClass: 'gradient-red-pink' },
+              { icon: '✅', label: '20K+ Verified', gradientClass: 'gradient-blue-cyan' },
               { icon: '🎯', label: '98% Accuracy', gradientClass: 'gradient-purple-pink' }
             ].map((item, index) => (
               <motion.div

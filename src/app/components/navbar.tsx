@@ -28,7 +28,7 @@ export default function Navbar() {
             </Link>
             <Link href="/How-Its-Work" className="flex items-center gap-2 text-gray-700 hover:text-brand px-3 py-2 rounded-md text-sm font-medium transition-colors">
               <Play className="text-[#FF3B30] w-5 h-5" />
-              How its works
+              How it works
             </Link>
 
             <Link href="/about" className="flex items-center gap-2 text-gray-700 hover:text-brand px-3 py-2 rounded-md text-sm font-medium transition-colors">

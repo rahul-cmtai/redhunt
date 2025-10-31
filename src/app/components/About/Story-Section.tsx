@@ -12,19 +12,19 @@ export default function StorySection() {
     {
       number: '1',
       title: 'The Problem',
-      description: 'In 2023, our founders witnessed countless companies struggling with candidates who accepted offers but never joined, or left within days. The hiring process was broken, costly, and filled with uncertainty.',
+      description: 'The Red-Flagged Story: Over the years, we witnessed first-hand the struggles of companies grappling with uncertainties in hiring. Countless businesses were plagued by candidates who would accept job offers only to vanish on their start date or leave shortly after joining. The broken hiring process was not only costly but also filled with uncertainty, leaving companies wondering if they had made the right hire. This lack of transparency and reliability was a pervasive issue across industries. We felt that controlled measures needed to be introduced.',
       gradient: 'from-red-500 to-pink-500'
     },
     {
       number: '2',
       title: 'The Solution',
-      description: 'We created Red-Flagged - a platform where employers could share and access verified candidate data, revealing patterns of no-shows, offer dropouts, and unreliable candidates before making hiring decisions.',
+      description: 'Driven by a passion to revolutionize the hiring process, we embarked on a mission to create a solution. We pooled our expertise, conducted extensive research, and worked tirelessly to develop a platform that brings transparency and reliability to the forefront of hiring. And thus, Red-flagged.com was born. With a mission to empower businesses to make informed hiring decisions, Red-flagged set out to transform the way companies discover, verify, and hire talent. Today, we\'re proud to be a trusted partner for businesses, helping them mitigate risk and build trustworthy teams.',
       gradient: 'from-blue-500 to-cyan-500'
     },
     {
       number: '3',
       title: 'The Impact',
-      description: 'Today, over 500+ companies trust Red-Flagged to verify 50,000+ candidates annually. We\'ve helped organizations reduce hiring risks by 70% and save millions in recruitment costs.',
+      description: 'Within a short span, we have created a significant impact in the industry and transformed the hiring cycle. Today, over 100+ companies trust Red-flagged.com to verify 20,000+ candidates annually. We\'ve helped organizations reduce hiring risks by 70% and save millions in recruitment costs.',
       gradient: 'from-green-500 to-emerald-500'
     }
   ]

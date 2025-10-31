@@ -19,6 +19,9 @@ export default function Home() {
       {/* Hero Section */}
       <Hero />
 
+      {/* Book a Consultation Section */}
+      <Banner />
+
       {/* Stats Section */}
       <StatsSection />
 
@@ -34,8 +37,7 @@ export default function Home() {
       {/* Testimonials Section */}
       <Testimonial />
 
-      {/* Book a Consultation Section */}
-      <Banner />
+      
 
       {/* Diverse Footer */}
       <Footer />
