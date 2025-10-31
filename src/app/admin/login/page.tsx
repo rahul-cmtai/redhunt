@@ -156,35 +156,10 @@ export default function AdminLogin() {
             </div>
           </form>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Need help?</span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <Link
-                href="/contact"
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Contact Support
-              </Link>
-            </div>
-          </div>
+        
         </div>
 
-        {/* Demo Credentials */}
-        <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-          <h4 className="text-sm font-semibold text-blue-300 mb-2">Demo Credentials</h4>
-          <div className="text-sm text-blue-200">
-            <p><strong>Username:</strong> admin</p>
-            <p><strong>Password:</strong> admin123</p>
-          </div>
-        </div>
+      
 
         {/* Security Notice */}
         <div className="text-center">
