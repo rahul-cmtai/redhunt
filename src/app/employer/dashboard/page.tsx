@@ -75,6 +75,13 @@ export default function EmployerDashboard() {
   const [showCsvMapping, setShowCsvMapping] = useState(false)
   const [fieldMapping, setFieldMapping] = useState<{[key: string]: string}>({})
   const [mappedData, setMappedData] = useState<any[]>([])
+  // Status history (verified candidates) state
+  const [statusNote, setStatusNote] = useState('')
+  const [statusSaving, setStatusSaving] = useState(false)
+  const [statusMsg, setStatusMsg] = useState<string | null>(null)
+  const [statusError, setStatusError] = useState<string | null>(null)
+  const [editingIdx, setEditingIdx] = useState<number | null>(null)
+  const [editingText, setEditingText] = useState('')
   // Company profile state
   const [profile, setProfile] = useState({
     companyName: '',
@@ -286,6 +293,40 @@ function isCorporateEmail(email: string): boolean {
   const handleViewCandidate = (candidate: any) => {
     setSelectedCandidate(candidate)
     setShowCandidateModal(true)
+    // reset status UI
+    setStatusNote('')
+    setStatusMsg(null)
+    setStatusError(null)
+    setEditingIdx(null)
+    setEditingText('')
+    const id = candidate?.id || candidate?._id
+    if (id) fetchCandidateUpdateHistory(id)
+  }
+
+  const selectCandidateForHistory = (candidate: any) => {
+    setSelectedCandidate(candidate)
+    setShowCandidateModal(false)
+    setStatusNote('')
+    setStatusMsg(null)
+    setStatusError(null)
+    setEditingIdx(null)
+    setEditingText('')
+    const id = candidate?.id || candidate?._id
+    if (id) fetchCandidateUpdateHistory(id)
+  }
+
+  const fetchCandidateUpdateHistory = async (id: string) => {
+    try {
+      const token = getEmployerToken()
+      if (!token) return
+      const { data } = await axios.get(`${API_BASE_URL}/api/employer/candidate-users/${id}/update-history`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const list = Array.isArray(data) ? data : (data?.updateHistory || data?.data || [])
+      setSelectedCandidate((prev: any) => prev ? { ...prev, updateHistory: list } : prev)
+    } catch (err) {
+      // ignore fetch errors for history; keep UI responsive
+    }
   }
 
   const handleSearch = async () => {
@@ -694,6 +735,89 @@ function isCorporateEmail(email: string): boolean {
     }
   }
 
+  const addStatusHistoryEntry = async (note: string) => {
+    if (!selectedCandidate || !selectedCandidate.id && !selectedCandidate._id) {
+      setStatusError('Candidate id not found')
+      return
+    }
+    if (!note.trim()) return
+    setStatusSaving(true)
+    setStatusMsg(null)
+    setStatusError(null)
+    try {
+      const token = getEmployerToken()
+      if (!token) throw new Error('Authentication required')
+      const id = selectedCandidate.id || selectedCandidate._id
+      await axios.patch(`${API_BASE_URL}/api/employer/candidate-users/${id}`, {
+        verificationNotes: note.trim()
+      }, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } })
+      // Optimistically append a local entry
+      const newEntry = {
+        points: (selectedCandidate.updateHistory?.length || 0) + 1,
+        date: new Date().toISOString(),
+        updatedByRole: 'employer',
+        updatedByName: 'You',
+        companyName: profile.companyName || undefined,
+        notes: note.trim()
+      }
+      setSelectedCandidate({ ...selectedCandidate, updateHistory: [...(selectedCandidate.updateHistory || []), newEntry] })
+      setStatusMsg('Status note added')
+      setStatusNote('')
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to add status'
+      setStatusError(msg)
+    } finally {
+      setStatusSaving(false)
+    }
+  }
+
+  const patchHistoryEntry = async (entryId: string, newText: string) => {
+    if (!selectedCandidate) return
+    setStatusSaving(true)
+    setStatusMsg(null)
+    setStatusError(null)
+    try {
+      const token = getEmployerToken()
+      if (!token) throw new Error('Authentication required')
+      const id = selectedCandidate.id || selectedCandidate._id
+      await axios.patch(`${API_BASE_URL}/api/employer/candidate-users/${id}/update-history/${entryId}`, {
+        notes: newText
+      }, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } })
+      // Optimistically update local state
+      const updated = (selectedCandidate.updateHistory || []).map((it: any) => it._id === entryId || it.id === entryId ? { ...it, notes: newText } : it)
+      setSelectedCandidate({ ...selectedCandidate, updateHistory: updated })
+      setStatusMsg('History updated')
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to update history'
+      setStatusError(msg)
+    } finally {
+      setStatusSaving(false)
+    }
+  }
+
+  const deleteHistoryEntryById = async (entryId: string) => {
+    if (!selectedCandidate) return
+    setStatusSaving(true)
+    setStatusMsg(null)
+    setStatusError(null)
+    try {
+      const token = getEmployerToken()
+      if (!token) throw new Error('Authentication required')
+      const id = selectedCandidate.id || selectedCandidate._id
+      await axios.delete(`${API_BASE_URL}/api/employer/candidate-users/${id}/update-history/${entryId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const filtered = (selectedCandidate.updateHistory || []).filter((it: any) => (it._id || it.id) !== entryId)
+      setSelectedCandidate({ ...selectedCandidate, updateHistory: filtered })
+      setStatusMsg('History entry deleted')
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to delete history'
+      setStatusError(msg)
+    } finally {
+      setStatusSaving(false)
+    }
+  }
+
   const fetchAllCandidates = async (type = 'all', search = '') => {
     setCandidatesLoading(true)
     setError(null)
@@ -913,6 +1037,7 @@ function isCorporateEmail(email: string): boolean {
                 { id: 'dashboard', label: 'Dashboard', shortLabel: 'Home' },
                 { id: 'add', label: 'Add Candidate', shortLabel: 'Add' },
                 { id: 'search', label: 'Verify Candidate', shortLabel: 'Verify' },
+                { id: 'history', label: 'Update History', shortLabel: 'History' },
                 { id: 'profile', label: 'Company Profile', shortLabel: 'Profile' }
               ].map((tab) => (
                 <button
@@ -998,6 +1123,176 @@ function isCorporateEmail(email: string): boolean {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Update History Tab */}
+        {activeTab === 'history' && (
+          <div>
+            <div className="mb-6 sm:mb-8">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Manage Update History</h2>
+              <p className="text-sm sm:text-base text-gray-600">Search a verified candidate and update their timeline. You can add, edit, or delete entries you created.</p>
+            </div>
+
+            {/* Search Section */}
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Search Candidate</label>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                  <input
+                    type="text"
+                    value={emailSearchQuery}
+                    onChange={(e) => setEmailSearchQuery(e.target.value)}
+                    placeholder="Enter Email / UAN"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm sm:text-base"
+                    onKeyPress={(e) => e.key === 'Enter' && handleEmailSearch()}
+                  />
+                  <button
+                    onClick={handleEmailSearch}
+                    disabled={emailSearchLoading}
+                    className="bg-red-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-red-700 flex items-center justify-center disabled:opacity-70 text-sm sm:text-base"
+                  >
+                    {emailSearchLoading ? 'Searching...' : 'Search'}
+                  </button>
+                </div>
+              </div>
+
+              {error && (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
+              )}
+
+              {emailSearchResults.length > 0 && (
+                <div className="space-y-3">
+                  {emailSearchResults.map((candidate, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-3 sm:p-4 flex items-center justify-between">
+                      <div className="min-w-0">
+                        <h5 className="font-medium text-gray-900 text-sm sm:text-base truncate">{candidate.name}</h5>
+                        <p className="text-xs sm:text-sm text-gray-600 truncate">{candidate.email || candidate.primaryEmail || '-'}</p>
+                      </div>
+                      <button
+                        onClick={() => selectCandidateForHistory(candidate)}
+                        className="bg-blue-600 text-white px-3 py-1 rounded text-xs sm:text-sm hover:bg-blue-700"
+                      >
+                        Manage History
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Editor Section */}
+            {selectedCandidate && (
+              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900">{selectedCandidate.name || 'Candidate'} — Status History</h3>
+                </div>
+
+                <div className="space-y-3">
+                  {(selectedCandidate.updateHistory || []).length > 0 ? (
+                    (selectedCandidate.updateHistory || []).map((h: any, idx: number) => (
+                      <div key={h._id || h.id || idx} className="rounded-lg border border-gray-200 p-3 bg-white">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-medium text-gray-900">Point {h.points ?? idx + 1}</div>
+                          <div className="text-xs text-gray-500">{h.date ? new Date(h.date).toLocaleString() : ''}</div>
+                        </div>
+                        <div className="mt-1 text-xs text-gray-600">
+                          <span className="mr-2">By: {h.updatedByName || '-'} ({h.updatedByRole || '-'})</span>
+                          {h.companyName && <span className="mr-2">Company: {h.companyName}</span>}
+                        </div>
+                        {editingIdx === idx ? (
+                          <div className="mt-2 space-y-2">
+                            <textarea
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              rows={3}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => patchHistoryEntry(h._id || h.id, editingText)}
+                                disabled={statusSaving}
+                                className="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 disabled:opacity-70"
+                              >
+                                {statusSaving ? 'Saving...' : 'Save Edit'}
+                              </button>
+                              <button
+                                onClick={() => { setEditingIdx(null); setEditingText('') }}
+                                className="px-3 py-1 border border-gray-300 rounded text-xs hover:bg-gray-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            {h.notes && <div className="mt-1 text-sm text-gray-800 whitespace-pre-wrap">{h.notes}</div>}
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                onClick={() => { setEditingIdx(idx); setEditingText(h.notes || '') }}
+                                className="px-3 py-1 border border-gray-300 rounded text-xs hover:bg-gray-50"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => deleteHistoryEntryById(h._id || h.id)}
+                                disabled={statusSaving}
+                                className="px-3 py-1 border border-red-300 text-red-700 rounded text-xs hover:bg-red-50 disabled:opacity-70"
+                              >
+                                {statusSaving ? 'Working...' : 'Delete'}
+                              </button>
+                            </div>
+                          </>
+                        )}
+
+                        {/* Read-only comments */}
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <div className="text-xs font-medium text-gray-800 mb-2">Comments</div>
+                          {Array.isArray(h.comments) && h.comments.length > 0 ? (
+                            <div className="space-y-2">
+                              {h.comments.map((c: any, cIdx: number) => (
+                                <div key={c._id || cIdx} className="bg-gray-50 rounded p-2">
+                                  <div className="text-xs text-gray-800 whitespace-pre-wrap break-words">{c.text}</div>
+                                  <div className="text-[10px] text-gray-500 mt-1">{c.createdAt ? new Date(c.createdAt).toLocaleString() : ''}</div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-xs text-gray-500">No comments yet.</div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-gray-600">No history yet.</div>
+                  )}
+                </div>
+
+                <div className="mt-4">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Add Status Note</h4>
+                  {statusMsg && <div className="mb-2 text-xs text-green-700">{statusMsg}</div>}
+                  {statusError && <div className="mb-2 text-xs text-red-700">{statusError}</div>}
+                  <div className="space-y-2">
+                    <textarea
+                      value={statusNote}
+                      onChange={(e) => setStatusNote(e.target.value)}
+                      rows={3}
+                      placeholder="Add verification note or context..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500"
+                    />
+                    <div>
+                      <button
+                        onClick={() => addStatusHistoryEntry(statusNote)}
+                        disabled={statusSaving}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-70"
+                      >
+                        {statusSaving ? 'Saving...' : 'Add Note'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1927,6 +2222,116 @@ function isCorporateEmail(email: string): boolean {
                   <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-3">Additional Notes</h3>
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <p className="text-gray-900 whitespace-pre-wrap">{selectedCandidate.notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Status / Update History (visible for verified or when history exists) */}
+              {(selectedCandidate?.type === 'verified' || selectedCandidate?.verified || (selectedCandidate?.updateHistory && selectedCandidate.updateHistory.length > 0)) && (
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-3">Status History</h3>
+                  <div className="space-y-3">
+                    {(selectedCandidate.updateHistory || []).length > 0 ? (
+                      (selectedCandidate.updateHistory || []).map((h: any, idx: number) => (
+                        <div key={idx} className="rounded-lg border border-gray-200 p-3 bg-white">
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm font-medium text-gray-900">Point {h.points ?? idx + 1}</div>
+                            <div className="text-xs text-gray-500">{h.date ? new Date(h.date).toLocaleString() : ''}</div>
+                          </div>
+                          <div className="mt-1 text-xs text-gray-600">
+                            <span className="mr-2">By: {h.updatedByName || '-'} ({h.updatedByRole || '-'})</span>
+                            {h.companyName && <span className="mr-2">Company: {h.companyName}</span>}
+                          </div>
+                          {editingIdx === idx ? (
+                            <div className="mt-2 space-y-2">
+                              <textarea
+                                value={editingText}
+                                onChange={(e) => setEditingText(e.target.value)}
+                                rows={3}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500"
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => patchHistoryEntry(h._id || h.id, editingText)}
+                                  disabled={statusSaving}
+                                  className="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 disabled:opacity-70"
+                                >
+                                  {statusSaving ? 'Saving...' : 'Save Edit'}
+                                </button>
+                                <button
+                                  onClick={() => { setEditingIdx(null); setEditingText('') }}
+                                  className="px-3 py-1 border border-gray-300 rounded text-xs hover:bg-gray-50"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              {h.notes && <div className="mt-1 text-sm text-gray-800 whitespace-pre-wrap">{h.notes}</div>}
+                              <div className="mt-2 flex gap-2">
+                                <button
+                                  onClick={() => { setEditingIdx(idx); setEditingText(h.notes || '') }}
+                                  className="px-3 py-1 border border-gray-300 rounded text-xs hover:bg-gray-50"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => deleteHistoryEntryById(h._id || h.id)}
+                                  disabled={statusSaving}
+                                  className="px-3 py-1 border border-red-300 text-red-700 rounded text-xs hover:bg-red-50 disabled:opacity-70"
+                                >
+                                  {statusSaving ? 'Working...' : 'Delete'}
+                                </button>
+                              </div>
+                            </>
+                          )}
+
+                          {/* Read-only comments */}
+                          <div className="mt-3 pt-3 border-t border-gray-100">
+                            <div className="text-xs font-medium text-gray-800 mb-2">Comments</div>
+                            {Array.isArray(h.comments) && h.comments.length > 0 ? (
+                              <div className="space-y-2">
+                                {h.comments.map((c: any, cIdx: number) => (
+                                  <div key={c._id || cIdx} className="bg-gray-50 rounded p-2">
+                                    <div className="text-xs text-gray-800 whitespace-pre-wrap break-words">{c.text}</div>
+                                    <div className="text-[10px] text-gray-500 mt-1">{c.createdAt ? new Date(c.createdAt).toLocaleString() : ''}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-xs text-gray-500">No comments yet.</div>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-gray-600">No history yet.</div>
+                    )}
+                  </div>
+
+                  <div className="mt-4">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2">Add Status Note</h4>
+                    {statusMsg && <div className="mb-2 text-xs text-green-700">{statusMsg}</div>}
+                    {statusError && <div className="mb-2 text-xs text-red-700">{statusError}</div>}
+                    <div className="space-y-2">
+                      <textarea
+                        value={statusNote}
+                        onChange={(e) => setStatusNote(e.target.value)}
+                        rows={3}
+                        placeholder="Add verification note or context..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500"
+                      />
+                      <div>
+                        <button
+                          onClick={() => addStatusHistoryEntry(statusNote)}
+                          disabled={statusSaving}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-70"
+                        >
+                          {statusSaving ? 'Saving...' : 'Add Note'}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

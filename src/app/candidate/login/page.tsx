@@ -117,6 +117,9 @@ export default function CandidateLogin() {
             <div className="mt-6">
               <Link href="/candidate/register" className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">Create Candidate Account</Link>
             </div>
+          <p className="mt-4 text-xs font-semibold text-black text-center bg-white border border-red-200 rounded px-3 py-2">
+            <span className="font-bold text-red-600">Disclaimer:</span> Offer declined, have you been Red-flagged?
+          </p>
           </div>
         </div>
 

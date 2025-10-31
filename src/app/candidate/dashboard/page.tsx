@@ -15,7 +15,6 @@ import {
   Phone, 
   CreditCard, 
   LogOut,
-  AlertCircle,
   TrendingUp,
   Calendar,
   Eye
@@ -48,8 +47,57 @@ export default function CandidateDashboard() {
   const [error, setError] = useState<string | null>(null)
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null)
   const [showOfferModal, setShowOfferModal] = useState(false)
+  const [activeTab, setActiveTab] = useState<'overview' | 'offers' | 'profile' | 'status'>('overview')
+  const [profileDraft, setProfileDraft] = useState({
+      phone: '',
+    secondaryEmail: '',
+    currentAddress: ''
+  })
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saveSuccess, setSaveSuccess] = useState<string | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [changingPwd, setChangingPwd] = useState(false)
+  const [pwdForm, setPwdForm] = useState({ currentPassword: '', newPassword: '' })
+  const [pwdMsg, setPwdMsg] = useState<string | null>(null)
+  const [timeline, setTimeline] = useState<any[]>([])
+  const [otp, setOtp] = useState('')
+  const [verifying, setVerifying] = useState(false)
+  const [verifyMsg, setVerifyMsg] = useState<string | null>(null)
+  const [resending, setResending] = useState(false)
+  const [resendMsg, setResendMsg] = useState<string | null>(null)
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
+  const [commentSubmitting, setCommentSubmitting] = useState<Record<string, boolean>>({})
+  const [commentErrors, setCommentErrors] = useState<Record<string, string | null>>({})
+  const [deletingComment, setDeletingComment] = useState<Record<string, boolean>>({})
 
   const getToken = () => localStorage.getItem('candidateToken') || sessionStorage.getItem('candidateToken')
+
+  const normalizeProfile = (raw: any) => {
+    if (!raw) return null
+    const candidate = raw.candidate || raw.user || raw.profile || raw.data || raw
+    return {
+      name: candidate.name || candidate.fullName || '',
+      email: candidate.email || candidate.primaryEmail || '',
+      primaryEmail: candidate.primaryEmail,
+      mobile: candidate.mobile || candidate.mobileNumber || '',
+      mobileNumber: candidate.mobileNumber,
+      pan: candidate.pan || candidate.panNumber || '',
+      panNumber: candidate.panNumber,
+      uan: candidate.uan || candidate.uanNumber || '',
+      uanNumber: candidate.uanNumber,
+      status: candidate.status || candidate.accountStatus || 'pending',
+      emailVerified: candidate.emailVerified ?? candidate.isEmailVerified ?? false,
+      updateHistory: candidate.updateHistory || [],
+      id: candidate._id || candidate.id
+    }
+  }
+
+  const normalizeOffers = (raw: any) => {
+    if (!raw) return []
+    const list = raw.offers || raw.data || raw.results || raw
+    return Array.isArray(list) ? list : []
+  }
 
   useEffect(() => {
     const token = getToken()
@@ -65,8 +113,12 @@ export default function CandidateDashboard() {
       try {
         const token = getToken()
         if (!token) return
-        const { data } = await axios.get(`${API_BASE_URL}/api/candidate/profile`, { headers: { Authorization: `Bearer ${token}` } })
-        setProfile(data)
+        const { data } = await axios.get(`${API_BASE_URL}/api/candidate/me`, { headers: { Authorization: `Bearer ${token}` } })
+        const normalized = normalizeProfile(data)
+        setProfile(normalized)
+        if (Array.isArray(normalized?.updateHistory)) {
+          setTimeline(normalized.updateHistory)
+        }
       } catch (err: any) {
         const msg = err?.response?.data?.message || err?.message || 'Failed to load profile'
         setError(msg)
@@ -74,6 +126,42 @@ export default function CandidateDashboard() {
     }
     if (isAuthenticated) fetchProfile()
   }, [isAuthenticated])
+
+  useEffect(() => {
+    if (profile) {
+      setProfileDraft({
+        phone: profile.mobile || profile.mobileNumber || '',
+        secondaryEmail: profile.secondaryEmail || '',
+        currentAddress: profile.currentAddress || ''
+      })
+    }
+  }, [profile, activeTab])
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    setSaveError(null)
+    setSaveSuccess(null)
+    try {
+      const token = getToken()
+      if (!token) throw new Error('Not authenticated')
+      const payload = {
+        phone: profileDraft.phone,
+        secondaryEmail: profileDraft.secondaryEmail,
+        currentAddress: profileDraft.currentAddress
+      }
+      const { data } = await axios.put(`${API_BASE_URL}/api/candidate/profile`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setProfile(normalizeProfile(data))
+      setSaveSuccess('Profile updated successfully')
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to update profile'
+      setSaveError(msg)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   useEffect(() => {
     const fetchOffers = async () => {
@@ -86,7 +174,7 @@ export default function CandidateDashboard() {
         const { data } = await axios.get(`${API_BASE_URL}/api/candidate/offers`, { 
           headers: { Authorization: `Bearer ${token}` } 
         })
-        setOffers(data || [])
+        setOffers(normalizeOffers(data))
       } catch (err: any) {
         console.log('Could not fetch offers:', err?.response?.data?.message || err?.message)
         // Don't show error if endpoint doesn't exist yet
@@ -98,9 +186,129 @@ export default function CandidateDashboard() {
     if (isAuthenticated) fetchOffers()
   }, [isAuthenticated])
 
+  const fetchTimeline = async () => {
+    try {
+      const token = getToken()
+      if (!token) return
+      const { data } = await axios.get(`${API_BASE_URL}/api/candidate/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const normalized = normalizeProfile(data)
+      const list = Array.isArray(normalized?.updateHistory) ? normalized.updateHistory : []
+      setProfile(normalized)
+      setTimeline(list)
+    } catch {
+      setTimeline([])
+    }
+  }
+
+  useEffect(() => {
+    if (isAuthenticated) fetchTimeline()
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    if (Array.isArray(profile?.updateHistory)) {
+      setTimeline(profile.updateHistory)
+    }
+  }, [profile])
+
+  const handleAddComment = async (entryId: string) => {
+    const text = commentInputs[entryId]?.trim()
+    if (!text) return
+    setCommentSubmitting(prev => ({ ...prev, [entryId]: true }))
+    setCommentErrors(prev => ({ ...prev, [entryId]: null }))
+    try {
+      const token = getToken()
+      if (!token) throw new Error('Not authenticated')
+      await axios.post(
+        `${API_BASE_URL}/api/candidate/update-history/${entryId}/comments`,
+        { text },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      setCommentInputs(prev => ({ ...prev, [entryId]: '' }))
+      await fetchTimeline()
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to add comment'
+      setCommentErrors(prev => ({ ...prev, [entryId]: msg }))
+    } finally {
+      setCommentSubmitting(prev => ({ ...prev, [entryId]: false }))
+    }
+  }
+
+  const handleDeleteComment = async (
+    entryId: string,
+    commentId: string,
+    createdBy: any
+  ) => {
+    const currentId = (profile?.id || '').toString()
+    const authorId = (createdBy?._id || createdBy || '').toString()
+    if (!currentId || currentId !== authorId) return
+    setDeletingComment(prev => ({ ...prev, [commentId]: true }))
+    try {
+      const token = getToken()
+      if (!token) throw new Error('Not authenticated')
+      await axios.delete(
+        `${API_BASE_URL}/api/candidate/update-history/${entryId}/comments/${commentId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      await fetchTimeline()
+    } catch (err) {
+      // no-op
+    } finally {
+      setDeletingComment(prev => ({ ...prev, [commentId]: false }))
+    }
+  }
+
   const handleViewOffer = (offer: Offer) => {
     setSelectedOffer(offer)
     setShowOfferModal(true)
+  }
+
+  const handleVerifyEmail = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setVerifying(true)
+    setVerifyMsg(null)
+    try {
+      const { data } = await axios.post(`${API_BASE_URL}/api/auth/verify-email`, {
+        role: 'candidate',
+        email: profile?.email || profile?.primaryEmail,
+        otp
+      })
+      if (data?.emailVerified) {
+        setProfile({ ...profile, emailVerified: true })
+        setVerifyMsg('Email verified successfully')
+      } else {
+        setVerifyMsg('Verification submitted')
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Verification failed'
+      setVerifyMsg(msg)
+    } finally {
+      setVerifying(false)
+    }
+  }
+
+  const handleResendOtp = async () => {
+    setResending(true)
+    setResendMsg(null)
+    try {
+      const body: any = { role: 'candidate' }
+      if (profile?.email || profile?.primaryEmail) body.email = profile.email || profile.primaryEmail
+      const { data } = await axios.post(`${API_BASE_URL}/api/auth/resend-otp`, body)
+      if (data?.emailVerified) {
+        setProfile({ ...profile, emailVerified: true })
+        setResendMsg('Email already verified')
+      } else if (data?.sent) {
+        setResendMsg('OTP sent to your email')
+      } else {
+        setResendMsg('Request processed')
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to resend OTP'
+      setResendMsg(msg)
+    } finally {
+      setResending(false)
+    }
   }
 
   const handleLogout = () => {
@@ -149,6 +357,8 @@ export default function CandidateDashboard() {
             </div>
           </div>
         </div>
+
+        
       </header>
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -158,7 +368,34 @@ export default function CandidateDashboard() {
           <p className="text-sm sm:text-base text-gray-600 mt-1">View your profile and offers from employers</p>
         </div>
 
-        {/* Stats Cards */}
+        {/* Candidate Awareness Section removed as per request */}
+
+        {/* Tabs */}
+        <div className="mb-4 sm:mb-6 border-b border-gray-200">
+          <nav className="flex overflow-x-auto no-scrollbar" aria-label="Tabs">
+            {[
+              { key: 'overview', label: 'Overview' },
+              { key: 'offers', label: 'Offers' },
+              { key: 'profile', label: 'Profile' },
+              { key: 'status', label: 'Status' }
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as any)}
+                className={`whitespace-nowrap px-3 sm:px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                  activeTab === tab.key
+                    ? 'border-red-600 text-red-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Stats Cards (Overview) */}
+        {activeTab === 'overview' && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
           <div className="bg-white rounded-lg shadow-sm p-4 sm:p-5 border border-gray-100">
             <div className="flex items-center justify-between mb-2">
@@ -196,9 +433,163 @@ export default function CandidateDashboard() {
             <p className="text-xs text-gray-500 mt-1">In progress</p>
           </div>
         </div>
+        )}
+
+        {/* Status (Update History) Tab */}
+        {activeTab === 'status' && (
+        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100 mb-6 sm:mb-8">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Status Timeline</h3>
+          </div>
+          {Array.isArray(timeline) && timeline.length > 0 ? (
+            <div className="space-y-3">
+              {timeline.map((h: any, idx: number) => (
+                <div key={idx} className="rounded-lg border border-gray-200 p-3 bg-white">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium text-gray-900">Point {h.points ?? idx + 1}</div>
+                    <div className="text-xs text-gray-500">{h.date ? new Date(h.date).toLocaleString() : ''}</div>
+                  </div>
+                  <div className="mt-1 text-xs text-gray-600">
+                    <span className="mr-2">By: {h.updatedByName || '-'} ({h.updatedByRole || '-'})</span>
+                    {h.companyName && <span className="mr-2">Company: {h.companyName}</span>}
+                  </div>
+                  {h.notes && (
+                    <div className="mt-1 text-sm text-gray-800">{h.notes}</div>
+                  )}
+                  {/* Show updated fields if present on this history entry */}
+                  {(h.presentCompany || h.designation || h.workLocation || h.currentCtc || h.expectedHikePercentage || h.noticePeriod || h.negotiableDays || (Array.isArray(h.skillSets) && h.skillSets.length) || h.verificationNotes || h.status) && (
+                    <div className="mt-2 text-xs text-gray-700">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {h.presentCompany && (
+                          <div><span className="text-gray-500">Present Company:</span> <span className="text-gray-900">{h.presentCompany}</span></div>
+                        )}
+                        {h.designation && (
+                          <div><span className="text-gray-500">Designation:</span> <span className="text-gray-900">{h.designation}</span></div>
+                        )}
+                        {h.workLocation && (
+                          <div><span className="text-gray-500">Work Location:</span> <span className="text-gray-900">{h.workLocation}</span></div>
+                        )}
+                        {h.currentCtc && (
+                          <div><span className="text-gray-500">Current CTC:</span> <span className="text-gray-900">{h.currentCtc}</span></div>
+                        )}
+                        {h.expectedHikePercentage && (
+                          <div><span className="text-gray-500">Expected Hike %:</span> <span className="text-gray-900">{h.expectedHikePercentage}</span></div>
+                        )}
+                        {h.noticePeriod && (
+                          <div><span className="text-gray-500">Notice Period:</span> <span className="text-gray-900">{h.noticePeriod}</span></div>
+                        )}
+                        {h.negotiableDays && (
+                          <div><span className="text-gray-500">Negotiable Days:</span> <span className="text-gray-900">{h.negotiableDays}</span></div>
+                        )}
+                        {Array.isArray(h.skillSets) && h.skillSets.length > 0 && (
+                          <div><span className="text-gray-500">Skill Sets:</span> <span className="text-gray-900">{h.skillSets.join(', ')}</span></div>
+                        )}
+                        {h.status && (
+                          <div><span className="text-gray-500">Status:</span> <span className="text-gray-900 capitalize">{h.status}</span></div>
+                        )}
+                        {h.verificationNotes && (
+                          <div className="sm:col-span-2"><span className="text-gray-500">Verification Notes:</span> <span className="text-gray-900">{h.verificationNotes}</span></div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Comments */}
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="text-xs font-medium text-gray-800 mb-2">Comments</div>
+                    {Array.isArray(h.comments) && h.comments.length > 0 ? (
+                      <div className="space-y-2">
+                        {h.comments.map((c: any) => {
+                          const authorId = (c?.createdBy?._id || c?.createdBy || '').toString()
+                          const canDelete = (profile?.id || '').toString() === authorId
+                          return (
+                            <div key={c._id || `${authorId}-${c.createdAt}`} className="flex items-start justify-between bg-gray-50 rounded p-2">
+                              <div className="text-xs text-gray-800">
+                                <div className="whitespace-pre-wrap break-words">{c.text}</div>
+                                <div className="text-[10px] text-gray-500 mt-1">{c.createdAt ? new Date(c.createdAt).toLocaleString() : ''}</div>
+                              </div>
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleDeleteComment(h._id, c._id, c.createdBy)}
+                                  disabled={!!deletingComment[c._id]}
+                                  className="ml-2 text-xs text-red-600 hover:text-red-800"
+                                >
+                                  {deletingComment[c._id] ? 'Deleting...' : 'Delete'}
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-500">No comments yet.</div>
+                    )}
+
+                    <div className="mt-2 flex items-start gap-2">
+                      <input
+                        type="text"
+                        value={commentInputs[h._id] || ''}
+                        onChange={(e) => setCommentInputs(prev => ({ ...prev, [h._id]: e.target.value }))}
+                        placeholder="Add a comment..."
+                        className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                      <button
+                        onClick={() => handleAddComment(h._id)}
+                        disabled={!!commentSubmitting[h._id] || !(commentInputs[h._id]?.trim())}
+                        className={`px-3 py-2 rounded-md text-xs font-medium text-white ${commentSubmitting[h._id] ? 'bg-red-400' : 'bg-red-600 hover:bg-red-700'}`}
+                      >
+                        {commentSubmitting[h._id] ? 'Posting...' : 'Comment'}
+                      </button>
+                    </div>
+                    {commentErrors[h._id] && (
+                      <div className="mt-1 text-[11px] text-red-600">{commentErrors[h._id]}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-gray-600">No updates yet.</div>
+          )}
+        </div>
+        )}
+
+        {/* Overview: What You Can Do */}
+        {activeTab === 'overview' && (
+        <div className="mb-6 sm:mb-10">
+          <div className="bg-white rounded-lg border border-gray-100 shadow-sm">
+            <div className="px-4 sm:px-6 py-4 sm:py-6">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3">What you can do</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <div className="p-3 rounded-md bg-red-50/60 border border-red-100">
+                  <div className="text-sm font-medium text-gray-900 mb-1">Employers Check Your History</div>
+                  <p className="text-xs sm:text-sm text-gray-600">Employers use Red-Flagged.com to verify your history of offers rejected and credentials.</p>
+                </div>
+                <div className="p-3 rounded-md bg-blue-50/60 border border-blue-100">
+                  <div className="text-sm font-medium text-gray-900 mb-1">Get Transparency</div>
+                  <p className="text-xs sm:text-sm text-gray-600">You'll know if an employer has Red-Flagged you and why.</p>
+                </div>
+                <div className="p-3 rounded-md bg-green-50/60 border border-green-100">
+                  <div className="text-sm font-medium text-gray-900 mb-1">Build Trust</div>
+                  <p className="text-xs sm:text-sm text-gray-600">Be upfront about your history to build trust with potential employers.</p>
+                </div>
+                <div className="p-3 rounded-md bg-amber-50/60 border border-amber-100">
+                  <div className="text-sm font-medium text-gray-900 mb-1">Take Control</div>
+                  <p className="text-xs sm:text-sm text-gray-600">Understand what employers see when they check your history.</p>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                <Link href="#" className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md bg-red-600 text-white hover:bg-red-700">Review My Record</Link>
+                <Link href="#" className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">Dispute/Clarify a Record</Link>
+              </div>
+            </div>
+          </div>
+        </div>
+        )}
 
 
-        {/* Offers from Employers */}
+        {/* Offers from Employers (Offers Tab) */}
+        {activeTab === 'offers' && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 mb-6 sm:mb-8">
           <div className="p-4 sm:p-6 border-b border-gray-100">
             <div className="flex items-center justify-between">
@@ -365,14 +756,22 @@ export default function CandidateDashboard() {
             )}
           </div>
         </div>
+        )}
 
-        {/* Profile Details */}
+        {/* Profile Details (Profile Tab) */}
+        {activeTab === 'profile' && (
         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100">
           <div className="flex items-center justify-between mb-4 sm:mb-6">
             <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Your Profile</h3>
             <User className="h-5 w-5 text-gray-400" />
           </div>
           
+          {profile?.status !== 'approved' && (
+            <div className="mb-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              Your account is pending approval by an admin. You can still review and edit your details below.
+            </div>
+          )}
+
           {error && <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -427,15 +826,116 @@ export default function CandidateDashboard() {
             </div>
           </div>
 
+          
+
+          {/* Email verification */}
+          {profile && profile.email && !profile.emailVerified && (
+            <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-sm font-medium text-gray-900">Verify your email</div>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">Not verified</span>
+              </div>
+              <form onSubmit={handleVerifyEmail} className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Enter 6-digit OTP"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+                <button type="submit" disabled={verifying} className={`px-4 py-2 rounded-md text-sm font-medium text-white ${verifying ? 'bg-red-400' : 'bg-red-600 hover:bg-red-700'}`}>
+                  {verifying ? 'Verifying...' : 'Verify Email'}
+                </button>
+                <button type="button" onClick={handleResendOtp} disabled={resending} className="px-4 py-2 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-100">
+                  {resending ? 'Sending...' : 'Resend OTP'}
+                </button>
+              </form>
+              {(verifyMsg || resendMsg) && (
+                <div className="mt-3 text-xs text-gray-600">{verifyMsg || resendMsg}</div>
+              )}
+            </div>
+          )}
+
           <div className="mt-6 flex flex-col sm:flex-row gap-3">
-            <button className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700">
-              Update Profile
+            <button className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700" onClick={() => setIsEditing(true)}>
+              Edit Details
             </button>
-            <button className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50">
+            <button className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50" onClick={() => { setChangingPwd(v => !v); setPwdMsg(null); }}>
               Change Password
             </button>
           </div>
+
+          {changingPwd && (
+            <div className="mt-6 border-t border-gray-200 pt-6">
+              <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Change Password</h4>
+              {pwdMsg && <div className="mb-3 text-sm text-gray-700">{pwdMsg}</div>}
+              <form onSubmit={async (e) => {
+                e.preventDefault()
+                setPwdMsg(null)
+                try {
+                  const token = getToken()
+                  if (!token) throw new Error('Not authenticated')
+                  await axios.patch(`${API_BASE_URL}/api/candidate/password`, {
+                    currentPassword: pwdForm.currentPassword,
+                    newPassword: pwdForm.newPassword
+                  }, { headers: { Authorization: `Bearer ${token}` } })
+                  setPwdMsg('Password updated successfully')
+                  setPwdForm({ currentPassword: '', newPassword: '' })
+                  setChangingPwd(false)
+                } catch (err: any) {
+                  const msg = err?.response?.data?.message || err?.message || 'Failed to change password'
+                  setPwdMsg(msg)
+                }
+              }} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div>
+                  <label className="block text-xs sm:text-sm text-gray-600 mb-1">Current Password</label>
+                  <input type="password" value={pwdForm.currentPassword} onChange={(e) => setPwdForm({ ...pwdForm, currentPassword: e.target.value })} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm text-gray-600 mb-1">New Password</label>
+                  <input type="password" value={pwdForm.newPassword} onChange={(e) => setPwdForm({ ...pwdForm, newPassword: e.target.value })} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
+                </div>
+                <div className="sm:col-span-2 flex gap-3 pt-2">
+                  <button type="submit" className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700">Update Password</button>
+                  <button type="button" onClick={() => { setChangingPwd(false); setPwdMsg(null); }} className="px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 hover:bg-gray-50">Cancel</button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {isEditing && (
+            <div className="mt-6 border-t border-gray-200 pt-6">
+              <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Update Your Details</h4>
+              {saveError && <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{saveError}</div>}
+              {saveSuccess && <div className="mb-4 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-700">{saveSuccess}</div>}
+              <form onSubmit={handleSaveProfile} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div>
+                  <label className="block text-xs sm:text-sm text-gray-600 mb-1">Phone</label>
+                  <input type="tel" value={profileDraft.phone} onChange={(e) => setProfileDraft({ ...profileDraft, phone: e.target.value })} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm text-gray-600 mb-1">Secondary Email</label>
+                  <input type="email" value={profileDraft.secondaryEmail} onChange={(e) => setProfileDraft({ ...profileDraft, secondaryEmail: e.target.value })} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm text-gray-600 mb-1">Current Address</label>
+                  <input type="text" value={profileDraft.currentAddress} onChange={(e) => setProfileDraft({ ...profileDraft, currentAddress: e.target.value })} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" />
+                </div>
+                <div className="sm:col-span-2 flex gap-3 pt-2">
+                  <button type="submit" disabled={saving} className={`px-4 py-2 rounded-lg text-sm font-medium text-white ${saving ? 'bg-red-400' : 'bg-red-600 hover:bg-red-700'}`}>
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <button type="button" onClick={() => { setIsEditing(false); setSaveError(null); setSaveSuccess(null); }} className="px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 hover:bg-gray-50">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
         </div>
+        )}
+
       </main>
 
       {/* Offer Details Modal */}

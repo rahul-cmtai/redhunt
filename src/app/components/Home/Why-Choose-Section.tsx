@@ -120,7 +120,7 @@ export default function WhyChooseSection() {
                   rotate: [0, -5, 5, -5, 0],
                   scale: 1.15
                 }}
-                transition={{ duration: 0.6, type: "spring", stiffness: 200 }}
+                transition={{ duration: 0.6, ease: "easeInOut", type: "keyframes" }}
               >
                 <motion.div
                   animate={{
