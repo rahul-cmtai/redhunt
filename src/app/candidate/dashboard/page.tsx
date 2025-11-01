@@ -20,7 +20,7 @@ import {
   Eye
 } from 'lucide-react'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://redhunt-bknd.vercel.app'
 
 interface Offer {
   _id?: string

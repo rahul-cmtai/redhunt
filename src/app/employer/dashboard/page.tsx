@@ -112,7 +112,7 @@ export default function EmployerDashboard() {
     email: ''
   })
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://redhunt-bknd.vercel.app'
   const getEmployerToken = () => localStorage.getItem('employerToken') || sessionStorage.getItem('employerToken')
   const bulkInputRef = useRef<HTMLInputElement | null>(null)
 

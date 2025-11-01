@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Eye, EyeOff, CheckCircle2, Loader2, ArrowRight, Calendar, MapPin, Building, GraduationCap, Briefcase } from 'lucide-react'
 import axios from 'axios'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://redhunt-bknd.vercel.app'
 
 // Dropdown options
 const GENDER_OPTIONS = [
