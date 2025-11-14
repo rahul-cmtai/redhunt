@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Eye, EyeOff, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react'
 import axios from 'axios'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://redhunt-bknd.vercel.app'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 // Block common free email providers to enforce corporate/work emails
 const FREE_EMAIL_DOMAINS = new Set([

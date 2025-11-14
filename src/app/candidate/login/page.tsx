@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react'
 import axios from 'axios'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://redhunt-bknd.vercel.app'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 export default function CandidateLogin() {
   const router = useRouter()
@@ -115,7 +115,7 @@ export default function CandidateLogin() {
               <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500">New to Red-Flagged?</span></div>
             </div>
             <div className="mt-6">
-              <Link href="/candidate/register" className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">Create Candidate Account</Link>
+              <Link href="/candidate/register" className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">Sign Up</Link>
             </div>
           <p className="mt-4 text-xs font-semibold text-black text-center bg-white border border-red-200 rounded px-3 py-2">
             <span className="font-bold text-red-600">Disclaimer:</span> Offer declined, have you been Red-flagged?
