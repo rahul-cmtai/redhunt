@@ -10,6 +10,8 @@ Red-Flagged is a B2B verification platform that lets employers track candidates 
 - **Benefits Section**: Key advantages for employers
 - **Trust Indicators**: Security and verification messaging
 
+
+
 ### Employer Panel
 - **Dashboard**: Overview with key metrics and quick actions
 - **Add Candidate**: Comprehensive form for logging candidate records
