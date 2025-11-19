@@ -62,7 +62,7 @@ export default function DashboardLayout({
 
   const navItems = [
     { href: '/candidate/dashboard/overview', label: 'Overview', shortLabel: 'Overview', icon: LayoutDashboard },
-    { href: '/candidate/dashboard/status', label: 'Remarks & Records', shortLabel: 'Remarks & Records', icon: Activity },
+    { href: '/candidate/dashboard/status', label: 'Red-Flagged & Records', shortLabel: 'Red-Flagged', icon: Activity },
     { href: '/candidate/dashboard/profile', label: 'Update Profile', shortLabel: 'Profile', icon: User }
   ]
 

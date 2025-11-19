@@ -30,6 +30,10 @@ interface Candidate {
   notes?: string
   employerId?: string
   employerName?: string
+  employer?: {
+    _id?: string
+    id?: string
+  }
   createdAt?: string
   updatedAt?: string
 }
@@ -96,7 +100,21 @@ export default function AdminCandidatesPage() {
             search: opts?.search?.trim() || undefined
           }
         })
-        data = response.data
+        // Normalize the response data to ensure consistent structure
+        const responseData = response.data
+        if (Array.isArray(responseData)) {
+          data = responseData.map((candidate: any) => ({
+            ...candidate,
+            employerId: candidate.employerId || candidate.employer?._id || candidate.employer?.id
+          }))
+        } else if (responseData?.candidates && Array.isArray(responseData.candidates)) {
+          data = responseData.candidates.map((candidate: any) => ({
+            ...candidate,
+            employerId: candidate.employerId || candidate.employer?._id || candidate.employer?.id
+          }))
+        } else {
+          data = responseData
+        }
       } catch (adminErr: any) {
         console.log('Admin candidates endpoint failed, trying alternative...', adminErr.response?.status)
         
@@ -163,6 +181,19 @@ export default function AdminCandidatesPage() {
     fetchCandidates({ employerId: filterEmployer, search: searchQuery })
   }, [filterEmployer])
 
+  useEffect(() => {
+    // Debounce search query
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim() || filterEmployer !== 'all') {
+        fetchCandidates({ employerId: filterEmployer, search: searchQuery })
+      } else {
+        fetchCandidates()
+      }
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery])
+
   const filteredCandidates = candidates.filter(candidate => {
     const matchesSearch = candidate.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          candidate.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -175,7 +206,8 @@ export default function AdminCandidatesPage() {
                          (filterStatus === 'not_joined' && (candidateStatus === 'not_joined' || candidateStatus === 'Not Joined')) ||
                          (filterStatus === 'pending' && !candidateStatus)
     
-    const matchesEmployer = filterEmployer === 'all' || candidate.employerName === filterEmployer
+    const candidateEmployerId = candidate.employerId || candidate.employer?._id || candidate.employer?.id
+    const matchesEmployer = filterEmployer === 'all' || candidateEmployerId === filterEmployer
     
     return matchesSearch && matchesStatus && matchesEmployer
   })

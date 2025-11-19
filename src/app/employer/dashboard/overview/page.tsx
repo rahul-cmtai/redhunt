@@ -93,8 +93,8 @@ export default function EmployerOverviewPage() {
                 <p className="text-xs sm:text-sm text-gray-600">Verify candidate information and update their status history.</p>
               </div>
               <div className="p-3 rounded-md bg-amber-50/60 border border-amber-100 hover:bg-amber-50 transition-colors">
-                <div className="text-sm font-medium text-gray-900 mb-1">View Remarks</div>
-                <p className="text-xs sm:text-sm text-gray-600">View all status timeline entries and remarks from verified candidates.</p>
+                <div className="text-sm font-medium text-gray-900 mb-1">View Red-Flagged</div>
+                <p className="text-xs sm:text-sm text-gray-600">View all status timeline entries and Red-Flagged from verified candidates.</p>
               </div>
             </div>
             <div className="mt-4 flex flex-col sm:flex-row gap-2">
@@ -108,14 +108,14 @@ export default function EmployerOverviewPage() {
                 href="/employer/dashboard/remarks" 
                 className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
               >
-                View Remarks
+                View Red-Flagged
               </Link>
-              <Link 
+              {/* <Link 
                 href="/employer/dashboard/profile" 
                 className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 Update Profile
-              </Link>
+              </Link> */}
             </div>
           </div>
         </div>
@@ -140,9 +140,9 @@ export default function EmployerOverviewPage() {
         >
           <div className="flex items-center mb-2">
             <FileText className="h-5 w-5 text-blue-600 mr-2 group-hover:scale-110 transition-transform" />
-            <h3 className="text-sm sm:text-base font-semibold text-gray-900">Status Timeline</h3>
+            <h3 className="text-sm sm:text-base font-semibold text-gray-900">Red-Flagged Timeline</h3>
           </div>
-          <p className="text-xs sm:text-sm text-gray-600">View all remarks and updates from verified candidates</p>
+          <p className="text-xs sm:text-sm text-gray-600">View all Red-Flagged and updates from verified candidates</p>
         </Link>
 
         <Link 

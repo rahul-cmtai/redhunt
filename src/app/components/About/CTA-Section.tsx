@@ -94,7 +94,7 @@ export default function AboutCTASection() {
               ease: "easeInOut"
             }}
           >
-            Join the Hiring Revolution
+            Join the Hiring Revolution with Red-Flagged
           </motion.h2>
 
           <motion.p 
@@ -119,10 +119,10 @@ export default function AboutCTASection() {
               whileTap={{ scale: 0.95 }}
             >
               <Link 
-                href="/demo" 
+                href="/employer/register" 
                 className="bg-white text-brand px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors inline-flex items-center justify-center gap-2 shadow-2xl group"
               >
-                Get Started Free
+                Join Us
                 <motion.div
                   animate={{ x: [0, 5, 0] }}
                   transition={{ duration: 1.5, repeat: Infinity }}

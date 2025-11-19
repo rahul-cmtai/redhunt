@@ -1,12 +1,30 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Home, User2, ChevronDown, UserCircle, Briefcase, Info, Sparkles, Grid3x3, Mail, Menu, X, Play } from 'lucide-react'
 
 export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isDropdownOpen])
 
   return (
     <nav className="bg-white/95 backdrop-blur-sm shadow-sm border-b sticky top-0 z-50">
@@ -52,11 +70,9 @@ export default function Navbar() {
           
           {/* Desktop Login Dropdown */}
           <div className="hidden md:flex items-center space-x-4">
-            <div className="relative bg-brand-50 rounded-lg">
+            <div className="relative bg-brand-50 rounded-lg" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                onMouseEnter={() => setIsDropdownOpen(true)}
-                onMouseLeave={() => setIsDropdownOpen(false)}
                 className="flex items-center gap-2 text-gray-700 hover:text-brand px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 <User2 className="w-4 h-4" />
@@ -66,12 +82,11 @@ export default function Navbar() {
               
               {isDropdownOpen && (
                 <div
-                  onMouseEnter={() => setIsDropdownOpen(true)}
-                  onMouseLeave={() => setIsDropdownOpen(false)}
-                  className="absolute right-0 mt-2 w-48 bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg border border-gray-100 overflow-hidden transition-all duration-200 ease-out"
+                  className="absolute right-0 mt-2 w-48 bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg border border-gray-100 overflow-hidden transition-all duration-200 ease-out z-50"
                 >
                   <Link
                     href="/candidate/login"
+                    onClick={() => setIsDropdownOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-brand-50 hover:text-brand transition-colors"
                   >
                     <UserCircle className="w-5 h-5" />
@@ -80,6 +95,7 @@ export default function Navbar() {
                   <div className="border-t border-gray-100"></div>
                   <Link
                     href="/employer/login"
+                    onClick={() => setIsDropdownOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-brand-50 hover:text-brand transition-colors"
                   >
                     <Briefcase className="w-5 h-5" />

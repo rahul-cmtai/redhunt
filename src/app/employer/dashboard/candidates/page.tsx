@@ -112,7 +112,7 @@ export default function CandidatesPage() {
       
       const candidateId = candidate.id || candidate._id
       
-      // Fetch update history
+      // Fetch Red-Flagged
       let historyData = { updateHistory: [] }
       try {
         const historyRes = await axios.get(`${API_BASE_URL}/api/employer/candidate-users/${candidateId}/update-history`, {
@@ -120,10 +120,10 @@ export default function CandidatesPage() {
         })
         historyData = historyRes.data
       } catch (err) {
-        console.log('Could not fetch update history:', err)
+        console.log('Could not fetch Red-Flagged:', err)
       }
       
-      // Filter out approval-only entries (entries with just "approved" and no actual remarks)
+      // Filter out approval-only entries (entries with just "approved" and no actual Red-Flagged)
       const filteredHistory = (historyData?.updateHistory || []).filter((entry: any) => {
         // If it's from an employer, always show it
         if (entry.updatedByRole === 'employer') {
@@ -370,10 +370,11 @@ export default function CandidatesPage() {
   }
 
   const filteredCandidates = candidates.filter((c: any) => {
+    const normalizedQuery = searchQuery.toLowerCase()
     const matchesSearch = !searchQuery || 
-      (c.fullName || c.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (c.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (c.panNumber || '').toLowerCase().includes(searchQuery.toLowerCase())
+      (c.fullName || c.name || '').toLowerCase().includes(normalizedQuery) ||
+      (c.email || '').toLowerCase().includes(normalizedQuery) ||
+      (c.panNumber || c.pan || '').toLowerCase().includes(normalizedQuery)
     
     const isVerified = isCandidateVerified(c)
     
@@ -426,7 +427,7 @@ export default function CandidatesPage() {
       </div>
 
       {/* Search by PAN/UAN */}
-      <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100 mb-6">
+      {/* <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100 mb-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Search Candidate by PAN/UAN</h3>
         <div className="flex gap-3">
           <input
@@ -496,7 +497,7 @@ export default function CandidatesPage() {
             </div>
           </div>
         )}
-      </div>
+      </div> */}
 
       {/* Add Candidate Button */}
       <div className="mb-6 flex justify-end">
@@ -660,7 +661,7 @@ export default function CandidatesPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Remarks</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Red-Flagged</label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -1214,7 +1215,7 @@ export default function CandidatesPage() {
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Add Verification Remarks</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Add Verification Red-Flagged</label>
                           <textarea
                             required
                             value={updateFormData.notes}
@@ -1245,10 +1246,10 @@ export default function CandidatesPage() {
                     </div>
                   )}
 
-                  {/* Update History Timeline */}
+                  {/* Red-Flagged Timeline */}
                   {isCandidateVerified(selectedCandidate) && (
                     <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Remarks Status</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Red-Flagged Status</h3>
                       {updateHistory.length > 0 ? (
                         <div className="space-y-4">
                           {updateHistory.map((entry: any, idx: number) => (
@@ -1256,7 +1257,7 @@ export default function CandidatesPage() {
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">
-                                    Remark {entry.points ?? idx + 1}
+                                    Red-Flagged {entry.points ?? idx + 1}
                                   </span>
                                   {entry.companyName && (
                                     <span className="text-sm font-semibold text-gray-900">{entry.companyName}</span>
@@ -1301,7 +1302,7 @@ export default function CandidatesPage() {
                                 <div className="mt-2 pt-2 border-t border-gray-200">
                                   <div className="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
                                     <MessageSquare className="h-3 w-3 text-red-600" />
-                                    Candidate Justification:
+                                    Candidate Red-Flagged Justification:
                                   </div>
                                   {entry.comments.map((comment: any, cIdx: number) => (
                                     <div key={cIdx} className="text-xs text-gray-600 bg-gray-50 p-2 rounded mb-1">
@@ -1321,7 +1322,7 @@ export default function CandidatesPage() {
                       ) : (
                         <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
                           <FileText className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                          <p className="text-sm text-gray-500">No update history yet</p>
+                          <p className="text-sm text-gray-500">No Red-Flagged yet</p>
                         </div>
                       )}
                     </div>

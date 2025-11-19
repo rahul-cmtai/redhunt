@@ -194,9 +194,9 @@ export default function RemarksPage() {
               <div className="bg-white/20 backdrop-blur-sm p-3 rounded-lg">
                 <Sparkles className="h-6 w-6 sm:h-8 sm:w-8" />
               </div>
-              <h1 className="text-2xl sm:text-4xl font-bold">Remark Status</h1>
+              <h1 className="text-2xl sm:text-4xl font-bold">Red-Flagged Status</h1>
             </div>
-            <p className="text-red-50 text-sm sm:text-base mt-2">View all remarks and updates from verified candidates</p>
+            <p className="text-red-50 text-sm sm:text-base mt-2">View all Red-Flagged and updates from verified candidates</p>
           </div>
         </div>
       </div>
@@ -232,7 +232,7 @@ export default function RemarksPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-          <div className="text-xs text-gray-500 font-medium mb-1">Total Remarks</div>
+          <div className="text-xs text-gray-500 font-medium mb-1">Total Red-Flagged</div>
           <div className="text-2xl font-bold text-gray-900">{allRemarks.length}</div>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
@@ -250,7 +250,7 @@ export default function RemarksPage() {
       {/* Remarks List */}
       {loading ? (
         <div className="text-center py-12">
-          <div className="text-gray-600">Loading remarks...</div>
+          <div className="text-gray-600">Loading Red-Flagged...</div>
         </div>
       ) : !searchQuery ? (
         <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
@@ -258,9 +258,9 @@ export default function RemarksPage() {
             <div className="bg-red-100 w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="h-10 w-10 sm:h-12 sm:w-12 text-red-600" />
             </div>
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Search to View Remarks</h3>
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Search to View Red-Flagged</h3>
             <p className="text-sm sm:text-base text-gray-600 max-w-md mx-auto">
-              Enter a candidate name, email, or PAN in the search box above to view their remarks timeline.
+              Enter a candidate name, email, or PAN in the search box above to view their Red-Flagged timeline.
             </p>
           </div>
         </div>
@@ -268,7 +268,7 @@ export default function RemarksPage() {
         <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
           <FileText className="h-12 w-12 text-gray-300 mx-auto mb-2" />
           <p className="text-sm text-gray-500">
-            No remarks found matching your search. Try a different candidate name, email, or PAN.
+            No Red-Flagged found matching your search. Try a different candidate name, email, or PAN.
           </p>
         </div>
       ) : (
@@ -278,7 +278,7 @@ export default function RemarksPage() {
               <div className="bg-red-100 p-2 rounded-lg">
                 <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Remarks Timeline</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Red-Flagged Timeline</h3>
             </div>
           </div>
           
@@ -299,16 +299,16 @@ export default function RemarksPage() {
                         )}
                       </div>
                       <div className="text-xs sm:text-sm text-gray-600 font-semibold bg-white px-3 py-1 rounded-full">
-                        {group.remarks.length} {group.remarks.length === 1 ? 'remark' : 'remarks'}
+                        {group.remarks.length} {group.remarks.length === 1 ? 'Red-Flagged' : 'Red-Flagged'}
                       </div>
                     </div>
                   </div>
                 )}
                 
-                {/* Accordion Style Remarks */}
+                {/* Accordion Style Red-Flagged */}
                 <div className="space-y-3">
                   {group.remarks.map((remark: any, idx: number) => {
-                    const remarkKey = remark._id || remark.id || `remark-${idx}`
+                    const remarkKey = remark._id || remark.id || `Red-Flagged-${idx}`
                     const isExpanded = expandedRemarks[remarkKey] || false
                     
                     return (
@@ -332,7 +332,7 @@ export default function RemarksPage() {
                             
                             {/* Remark Number */}
                             <div className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-bold">
-                              Remark {remark.points ?? idx + 1}
+                              Red-Flagged {remark.points ?? idx + 1}
                             </div>
                             
                             {/* Updated By */}
@@ -360,7 +360,7 @@ export default function RemarksPage() {
                         {/* Accordion Content - Expandable */}
                         {isExpanded && (
                           <div className="px-4 sm:px-6 pb-4 sm:pb-6 border-t border-gray-200">
-                            {/* Notes - The Remark */}
+                            {/* Notes - The Red-Flagged */}
                             {remark.notes && (
                               <div className="mt-4 mb-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
                                 <div className="flex items-start gap-2">
@@ -374,7 +374,7 @@ export default function RemarksPage() {
                             <div className="mt-4 pt-4 border-t-2 border-gray-200">
                               <div className="flex items-center text-sm font-semibold text-gray-800 mb-3">
                                 <MessageSquare className="h-4 w-4 mr-2 text-red-600" />
-                                Candidate Justification
+                                Candidate Red-Flagged Justification
                               </div>
                               {Array.isArray(remark.comments) && remark.comments.length > 0 ? (
                                 <div className="space-y-3">
@@ -391,7 +391,7 @@ export default function RemarksPage() {
                                   ))}
                                 </div>
                               ) : (
-                                <div className="text-sm text-gray-500 italic">No justification yet.</div>
+                                <div className="text-sm text-gray-500 italic">No Red-Flagged justification yet.</div>
                               )}
                             </div>
                           </div>

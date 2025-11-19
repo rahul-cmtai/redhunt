@@ -207,7 +207,7 @@ export default function AdminCandidateUsersPage() {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remark</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Red-Flagged</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
@@ -603,7 +603,7 @@ export default function AdminCandidateUsersPage() {
                         </p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Update History Count</label>
+                        <label className="block text-sm font-medium text-gray-700">Red-Flagged Count</label>
                         <p className="text-gray-900">
                           {Array.isArray(selectedCandidateUser.updateHistory) ? selectedCandidateUser.updateHistory.length : 0} entries
                         </p>

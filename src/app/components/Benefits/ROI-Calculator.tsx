@@ -12,7 +12,7 @@ export default function ROICalculator() {
 
   const stats = [
     {
-      value: '$250K+',
+      value: '$25K+',
       label: 'Average Annual Savings',
       sublabel: 'Based on 100 hires per year',
       color: 'text-brand',
@@ -120,25 +120,7 @@ export default function ROICalculator() {
             ))}
           </div>
 
-          <motion.div 
-            className="mt-12 text-center"
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-            transition={{ delay: 0.8, duration: 0.6 }}
-          >
-            <motion.div
-              whileHover={{ scale: 1.05, y: -3 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Link 
-                href="/demo" 
-                className="btn-brand px-8 py-4 rounded-lg text-lg font-semibold inline-flex items-center gap-2 shadow-xl"
-              >
-                <Target className="h-5 w-5" />
-                <span>Get Your Custom ROI Report</span>
-              </Link>
-            </motion.div>
-          </motion.div>
+          
         </motion.div>
       </div>
     </section>

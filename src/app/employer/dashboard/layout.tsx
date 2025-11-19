@@ -63,7 +63,7 @@ export default function EmployerDashboardLayout({
   const navItems = [
     { href: '/employer/dashboard/overview', label: 'Overview', shortLabel: 'Overview', icon: LayoutDashboard },
     { href: '/employer/dashboard/candidates', label: 'Candidates', shortLabel: 'Candidates', icon: Users },
-    { href: '/employer/dashboard/remarks', label: 'Remarks', shortLabel: 'Remarks', icon: FileText },
+    { href: '/employer/dashboard/remarks', label: 'Red-Flagged', shortLabel: 'Red-Flagged', icon: FileText },
     { href: '/employer/dashboard/profile', label: 'Profile', shortLabel: 'Profile', icon: User }
   ]
 

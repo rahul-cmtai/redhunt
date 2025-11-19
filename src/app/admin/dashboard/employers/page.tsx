@@ -11,7 +11,18 @@ import {
   Building2, 
   X, 
   ChevronDown,
-  Loader2
+  Loader2,
+  Mail,
+  Phone,
+  MapPin,
+  User,
+  Briefcase,
+  Shield,
+  FileText,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
@@ -21,11 +32,22 @@ interface Employer {
   id?: string
   companyName?: string
   company?: string
+  address?: string
+  panNumber?: string
+  hrName?: string
+  designation?: string
+  contactNumber?: string
   email: string
   status: string
+  role?: string
+  trustScore?: number
+  emailVerified?: boolean
+  industry?: string
+  companyCode?: string
   candidateCount?: number
   candidates?: number
   createdAt?: string
+  updatedAt?: string
   joinedOn?: string
   lastActivity?: string
 }
@@ -154,9 +176,25 @@ export default function AdminEmployersPage() {
     }
   }
 
-  const openView = (employer: Employer) => { 
+  const openView = async (employer: Employer) => { 
     setSelectedEmployer(employer)
-    setIsViewOpen(true) 
+    setIsViewOpen(true)
+    
+    // Fetch fresh candidate count
+    try {
+      const token = getToken()
+      if (!token) return
+      
+      const { data: candidatesData } = await axios.get(`${API_BASE_URL}/api/admin/candidates`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { employerId: employer._id || employer.id }
+      })
+      
+      const count = Array.isArray(candidatesData) ? candidatesData.length : (candidatesData?.candidates?.length || candidatesData?.length || 0)
+      setSelectedEmployer({ ...employer, candidateCount: count })
+    } catch (err) {
+      console.error('Failed to fetch candidate count:', err)
+    }
   }
   const closeView = () => { 
     setIsViewOpen(false)
@@ -451,7 +489,7 @@ export default function AdminEmployersPage() {
             </div>
             
             <div className="px-6 py-4 space-y-6">
-              {/* Company Information */}
+              {/* Company Information - Matching Registration Form Order */}
               <div className="border-b pb-4">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Building2 className="h-5 w-5 mr-2 text-blue-600" />
@@ -459,13 +497,92 @@ export default function AdminEmployersPage() {
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <div className="text-sm text-gray-500 mb-1">Company Name</div>
+                    <div className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                      <Building2 className="h-3 w-3" />
+                      Company Name
+                    </div>
                     <div className="text-gray-900 font-medium">{selectedEmployer.companyName || selectedEmployer.company || 'N/A'}</div>
                   </div>
+                  <div className="md:col-span-2">
+                    <div className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      Company Address
+                    </div>
+                    <div className="text-gray-900 whitespace-pre-wrap">{selectedEmployer.address || 'N/A'}</div>
+                  </div>
                   <div>
-                    <div className="text-sm text-gray-500 mb-1">Email Address</div>
+                    <div className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                      <FileText className="h-3 w-3" />
+                      PAN Number of the Company
+                    </div>
+                    <div className="text-gray-900 font-mono text-lg">{selectedEmployer.panNumber || 'N/A'}</div>
+                  </div>
+                  {selectedEmployer.industry && (
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                        <Briefcase className="h-3 w-3" />
+                        Industry
+                      </div>
+                      <div className="text-gray-900">{selectedEmployer.industry}</div>
+                    </div>
+                  )}
+                  {selectedEmployer.companyCode && (
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                        <FileText className="h-3 w-3" />
+                        Company Code
+                      </div>
+                      <div className="text-gray-900">{selectedEmployer.companyCode}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* HR Contact Information - Matching Registration Form Order */}
+              <div className="border-b pb-4">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <User className="h-5 w-5 mr-2 text-green-600" />
+                  HR Contact Information
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      Your Name (HR Name)
+                    </div>
+                    <div className="text-gray-900 font-medium">{selectedEmployer.hrName || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                      <Briefcase className="h-3 w-3" />
+                      Designation
+                    </div>
+                    <div className="text-gray-900">{selectedEmployer.designation || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                      <Phone className="h-3 w-3" />
+                      Mobile Number
+                    </div>
+                    <div className="text-gray-900">{selectedEmployer.contactNumber || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                      <Mail className="h-3 w-3" />
+                      Corporate Mail ID
+                    </div>
                     <div className="text-gray-900 break-all">{selectedEmployer.email || 'N/A'}</div>
                   </div>
+                </div>
+              </div>
+
+              {/* Account Status & Security */}
+              <div className="border-b pb-4">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Shield className="h-5 w-5 mr-2 text-purple-600" />
+                  Account Status & Security
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Account Status</div>
                     <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
@@ -483,8 +600,38 @@ export default function AdminEmployersPage() {
                     </span>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-500 mb-1">Last Activity</div>
-                    <div className="text-gray-900">{selectedEmployer.lastActivity || 'Recently active'}</div>
+                    <div className="text-sm text-gray-500 mb-1">Role</div>
+                    <div className="text-gray-900 capitalize">{selectedEmployer.role || 'employer'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                      Email Verification Status
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {selectedEmployer.emailVerified ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Verified
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                          <XCircle className="h-3 w-3" />
+                          Not Verified
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1">Trust Score</div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-red-600 h-2 rounded-full"
+                          style={{ width: `${((selectedEmployer.trustScore || 0) / 10) * 100}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900">{selectedEmployer.trustScore || 0}/10</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -506,16 +653,65 @@ export default function AdminEmployersPage() {
                     </div>
                   </div>
                   <div className="bg-purple-50 p-4 rounded-lg">
-                    <div className="text-sm text-purple-600 mb-1">Member Since</div>
-                    <div className="text-sm font-bold text-purple-900">
+                    <div className="text-sm text-purple-600 mb-1">Trust Score</div>
+                    <div className="text-lg font-bold text-purple-900">
+                      {selectedEmployer.trustScore || 0}/10
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* System Information */}
+              <div className="border-b pb-4">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Clock className="h-5 w-5 mr-2 text-gray-600" />
+                  System Information
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      Created At
+                    </div>
+                    <div className="text-gray-900">
                       {selectedEmployer.createdAt 
-                        ? new Date(selectedEmployer.createdAt).toLocaleDateString('en-US', { 
+                        ? new Date(selectedEmployer.createdAt).toLocaleString('en-US', { 
                             year: 'numeric', 
                             month: 'short', 
-                            day: 'numeric' 
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
                           })
                         : selectedEmployer.joinedOn || 'N/A'}
                     </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      Last Updated
+                    </div>
+                    <div className="text-gray-900">
+                      {selectedEmployer.updatedAt 
+                        ? new Date(selectedEmployer.updatedAt).toLocaleString('en-US', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })
+                        : 'N/A'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                      <FileText className="h-3 w-3" />
+                      Record ID
+                    </div>
+                    <div className="text-gray-900 text-xs font-mono break-all">{selectedEmployer._id || selectedEmployer.id || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1">Last Activity</div>
+                    <div className="text-gray-900">{selectedEmployer.lastActivity || 'Recently active'}</div>
                   </div>
                 </div>
               </div>
@@ -524,7 +720,13 @@ export default function AdminEmployersPage() {
             {/* Action Footer */}
             <div className="border-t px-6 py-4 flex justify-between items-center sticky bottom-0 bg-gray-50">
               <div className="text-sm text-gray-600">
-                Last updated: {selectedEmployer.createdAt ? new Date(selectedEmployer.createdAt).toLocaleDateString() : 'N/A'}
+                Last updated: {selectedEmployer.updatedAt ? new Date(selectedEmployer.updatedAt).toLocaleString('en-US', { 
+                  year: 'numeric', 
+                  month: 'short', 
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }) : (selectedEmployer.createdAt ? new Date(selectedEmployer.createdAt).toLocaleDateString() : 'N/A')}
               </div>
               <div className="flex gap-2">
                 <button 

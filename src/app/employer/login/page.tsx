@@ -17,10 +17,25 @@ export default function EmployerLogin() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [agreeDisclaimer, setAgreeDisclaimer] = useState(false)
+  const [isMobileDisclaimerExpanded, setIsMobileDisclaimerExpanded] = useState(false)
+
+  const disclaimerPoints = [
+    'The company is solely responsible for the accuracy, truthfulness, and completeness of submitted data.',
+    'Red-Flagged.com does not verify submissions and provides the platform “as is” without warranties.',
+    'Red-Flagged.com is not liable for any damages arising from use of the platform.',
+    'The company agrees to indemnify Red-Flagged.com for any consequences of inaccurate or misleading information.',
+    'Red-Flagged.com does not assume any risk or liability for hiring decisions made using the platform.',
+    'Red-Flagged.com may update this disclaimer at any time without notice.'
+  ]
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    if (!agreeDisclaimer) {
+      setError('Please read and agree to the disclaimer before signing in.')
+      return
+    }
     setIsSubmitting(true)
     try {
       const { data } = await axios.post(
@@ -57,7 +72,7 @@ export default function EmployerLogin() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+      <div className="w-full max-w-5xl mx-auto space-y-8 px-4 sm:px-0">
         {/* Header */}
         <div className="text-center">
           <Link href="/" className="text-3xl font-bold text-red-600">
@@ -72,7 +87,7 @@ export default function EmployerLogin() {
         </div>
 
         {/* Login Form */}
-        <div className="bg-white py-8 px-6 shadow-lg rounded-lg">
+        <div className="bg-white py-10 px-8 shadow-lg rounded-lg w-full">
           {error && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
               {error}
@@ -139,17 +154,31 @@ export default function EmployerLogin() {
                 </label>
               </div>
 
-              <div className="text-sm">
+              {/* <div className="text-sm">
                 <a href="#" className="font-medium text-red-600 hover:text-red-500">
                   Forgot your password?
                 </a>
-              </div>
+              </div> */}
             </div>
 
+            <div className="space-y-3">
+              <label className="flex items-start gap-3 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 mt-0.5 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                  checked={agreeDisclaimer}
+                  onChange={(e) => setAgreeDisclaimer(e.target.checked)}
+                />
+                <span>I agree to the disclaimer and confirm that I am authorized to submit accurate candidate information on behalf of my company.</span>
+              </label>
+              <p className="text-xs text-gray-500">
+                Please review the full “Disclaimer for HR” section below before confirming.
+              </p>
+            </div>
             <div>
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !agreeDisclaimer}
                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-70"
               >
                 {isSubmitting ? (
@@ -181,8 +210,49 @@ export default function EmployerLogin() {
                 Sign Up
               </Link>
             </div>
+            <div className="mt-6 space-y-3">
+              <div className="hidden sm:block rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-gray-700">
+                <p className="font-semibold text-red-700 mb-2">Disclaimer for HR:</p>
+                <p className="mb-2">By submitting information about a candidate to Red-Flagged.com, you acknowledge and agree to the following:</p>
+                <ul className="list-disc pl-4 space-y-1">
+                  {disclaimerPoints.map((point) => (
+                    <li key={point}>{point}</li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-xs text-gray-600">
+                  By submitting information you confirm you are authorized to act on behalf of your company and accept these terms.
+                </p>
+              </div>
+              <div className="sm:hidden rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-gray-700">
+                <p className="font-semibold text-red-700 mb-2">Disclaimer for HR:</p>
+                {isMobileDisclaimerExpanded ? (
+                  <>
+                    <p className="mb-2">By submitting information about a candidate to Red-Flagged.com, you acknowledge and agree to the following:</p>
+                    <ul className="list-disc pl-4 space-y-1">
+                      {disclaimerPoints.map((point) => (
+                        <li key={point}>{point}</li>
+                      ))}
+                    </ul>
+                    <p className="mt-3 text-xs text-gray-600">
+                      By submitting information you confirm you are authorized to act on behalf of your company and accept these terms.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-gray-700">
+                    Review Red-Flagged.com company liability terms before submitting candidate info.
+                  </p>
+                )}
+                <button
+                  type="button"
+                  className="mt-3 text-xs font-semibold text-red-600"
+                  onClick={() => setIsMobileDisclaimerExpanded((prev) => !prev)}
+                >
+                  {isMobileDisclaimerExpanded ? 'Show less' : 'Show more'}
+                </button>
+              </div>
+            </div>
           <p className="mt-4 text-xs font-semibold text-black text-center bg-white border border-red-200 rounded px-3 py-2">
-            <span className="font-bold text-red-600">Disclaimer:</span> Offer declined, Have you Red-flagged ?
+             Offer declined, Have you Red-flagged ?
           </p>
           </div>
         </div>

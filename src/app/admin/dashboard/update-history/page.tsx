@@ -118,7 +118,7 @@ export default function AdminUpdateHistoryPage() {
       setHistoryEditingIdx(null)
       setHistoryEditingText('')
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || 'Failed to update history'
+      const msg = err?.response?.data?.message || err?.message || 'Failed to update Red-Flagged Remark'
       setHistoryErr(msg)
     } finally {
       setHistorySaving(false)
@@ -151,7 +151,7 @@ export default function AdminUpdateHistoryPage() {
   return (
     <>
       <div className="mb-6 sm:mb-8">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Manage Candidate Updated Remark</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Manage Candidate Updated Red-Flagged</h2>
         <p className="text-sm sm:text-base text-gray-600">Search a verified candidate user and maintain their timeline. You can add notes or edit/delete entries you created.</p>
       </div>
 
@@ -211,7 +211,7 @@ export default function AdminUpdateHistoryPage() {
       {historyCandidate && (
         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900">{historyCandidate.name || 'Candidate'} — Updated Remark</h3>
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900">{historyCandidate.name || 'Candidate'} — Updated Red-Flagged</h3>
           </div>
 
           <div className="space-y-3">
@@ -219,7 +219,7 @@ export default function AdminUpdateHistoryPage() {
               (historyCandidate.updateHistory || []).map((h: any, idx: number) => (
                 <div key={h._id || h.id || idx} className="rounded-lg border border-gray-200 p-3 bg-white">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium text-gray-900">Point {h.points ?? idx + 1}</div>
+                    <div className="text-sm font-medium text-gray-900">Red-Flagged : {h.points ?? idx + 1}</div>
                     <div className="text-xs text-gray-500">{h.date ? new Date(h.date).toLocaleString() : ''}</div>
                   </div>
                   <div className="mt-1 text-xs text-gray-600">
@@ -295,7 +295,7 @@ export default function AdminUpdateHistoryPage() {
           </div>
 
           <div className="mt-4">
-            <h4 className="text-sm font-semibold text-gray-900 mb-2">Add Remark Note</h4>
+            <h4 className="text-sm font-semibold text-gray-900 mb-2">Add Red-Flagged Note</h4>
             {historyMsg && <div className="mb-2 text-xs text-green-700">{historyMsg}</div>}
             {historyErr && <div className="mb-2 text-xs text-red-700">{historyErr}</div>}
             <div className="space-y-2">

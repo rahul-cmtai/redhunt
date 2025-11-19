@@ -180,8 +180,8 @@ export default function Hero() {
               transition={{ delay: 0.9 }}
             >
               {[
-                { value: "10K+", label: "Happy Patients" },
-                { value: "500+", label: "Expert Doctors" },
+                { value: "200+", label: "Companies Trusting Us" },
+                { value: "20K+", label: "Candidates Verified" },
                 { value: "4.9/5", label: "User Rating" },
               ].map((stat, index) => (
                 // eslint-disable-next-line react/no-array-index-key

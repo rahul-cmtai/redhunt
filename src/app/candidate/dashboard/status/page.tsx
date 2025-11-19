@@ -122,7 +122,7 @@ export default function StatusPage() {
               <div className="bg-white/20 backdrop-blur-sm p-3 rounded-lg">
                 <Sparkles className="h-6 w-6 sm:h-8 sm:w-8" />
               </div>
-              <h1 className="text-2xl sm:text-4xl font-bold">Your remarks from companies</h1>
+              <h1 className="text-2xl sm:text-4xl font-bold">Your Red-Flagged from companies</h1>
             </div>
             <p className="text-red-50 text-sm sm:text-base mt-2">Track your journey and application updates</p>
           </div>
@@ -135,7 +135,7 @@ export default function StatusPage() {
             <div className="bg-red-100 p-2 rounded-lg">
               <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
             </div>
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Update History</h3>
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Red-Flagged History</h3>
           </div>
         </div>
         {Array.isArray(timeline) && timeline.length > 0 ? (
@@ -193,7 +193,7 @@ export default function StatusPage() {
                       <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
                         <div className="flex items-center gap-2">
                           <div className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs sm:text-sm font-bold">
-                            Remark {h.points ?? idx + 1}
+                            Red-Flagged {h.points ?? idx + 1}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-gray-600">
@@ -315,7 +315,7 @@ export default function StatusPage() {
                       <div className="mt-4 pt-4 border-t-2 border-gray-200">
                         <div className="flex items-center text-sm font-semibold text-gray-800 mb-3">
                           <MessageSquare className="h-4 w-4 mr-2 text-red-600" />
-                          Your Justification
+                          Your Red-Flagged Justification
                         </div>
                         {Array.isArray(h.comments) && h.comments.length > 0 ? (
                           <div className="space-y-3 mb-4">
@@ -353,7 +353,7 @@ export default function StatusPage() {
                             type="text"
                             value={commentInputs[h._id] || ''}
                             onChange={(e) => setCommentInputs(prev => ({ ...prev, [h._id]: e.target.value }))}
-                            placeholder="Add your justification..."
+                            placeholder="Add your Red-Flagged justification..."
                             className="flex-1 rounded-lg border-2 border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
                             onKeyPress={(e) => {
                               if (e.key === 'Enter' && !commentSubmitting[h._id] && commentInputs[h._id]?.trim()) {
@@ -366,7 +366,7 @@ export default function StatusPage() {
                             disabled={!!commentSubmitting[h._id] || !(commentInputs[h._id]?.trim())}
                             className={`px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all shadow-md hover:shadow-lg ${commentSubmitting[h._id] ? 'bg-red-400 cursor-not-allowed' : 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600'}`}
                           >
-                            {commentSubmitting[h._id] ? 'Posting...' : 'Justify'}
+                            {commentSubmitting[h._id] ? 'Posting...' : 'Red-Flagged Justify'}
                           </button>
                         </div>
                         {commentErrors[h._id] && (

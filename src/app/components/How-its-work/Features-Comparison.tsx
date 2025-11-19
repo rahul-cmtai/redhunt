@@ -154,6 +154,47 @@ export default function FeaturesComparison() {
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             <div className="text-center">
+              <motion.h2
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 whitespace-nowrap"
+                initial={{ opacity: 0, scale: 0.5, y: -20 }}
+                animate={isInView ? { 
+                  opacity: 1, 
+                  scale: [1, 1.05, 1],
+                  y: [0, -5, 0],
+                  rotate: [0, 1, -1, 0]
+                } : { opacity: 0, scale: 0.5, y: -20 }}
+                transition={{ 
+                  scale: {
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  },
+                  y: {
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  },
+                  rotate: {
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  },
+                  opacity: {
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 15,
+                    delay: 0.1
+                  },
+                  default: {
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 15,
+                    delay: 0.1
+                  }
+                }}
+              >
+                Have you <br/><span className="text-brand">Red-Flagged ?</span>
+              </motion.h2>
               <motion.div
                 className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-500 to-red-600 rounded-full mb-4"
                 whileHover={{ scale: 1.1, rotate: 5 }}
@@ -231,6 +272,47 @@ export default function FeaturesComparison() {
             transition={{ duration: 0.8, delay: 0.4 }}
           >
             <div className="text-center">
+              <motion.h2
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 whitespace-nowrap"
+                initial={{ opacity: 0, scale: 0.5, y: -20 }}
+                animate={isInView ? { 
+                  opacity: 1, 
+                  scale: [1, 1.05, 1],
+                  y: [0, -5, 0],
+                  rotate: [0, -1, 1, 0]
+                } : { opacity: 0, scale: 0.5, y: -20 }}
+                transition={{ 
+                  scale: {
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  },
+                  y: {
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  },
+                  rotate: {
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  },
+                  opacity: {
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 15,
+                    delay: 0.3
+                  },
+                  default: {
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 15,
+                    delay: 0.3
+                  }
+                }}
+              >
+                Have you been <br/> <span className="text-brand">Red-Flagged ?</span>
+              </motion.h2>
               <motion.div
                 className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mb-4"
                 whileHover={{ scale: 1.1, rotate: -5 }}

@@ -117,7 +117,7 @@ export default function OverviewPage() {
                   href="/candidate/dashboard/status" 
                   className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors"
                 >
-                  View Remarks & Records
+                  View Red-Flagged & Records
                 </Link>
                 <Link 
                   href="/candidate/dashboard/profile" 
@@ -138,9 +138,9 @@ export default function OverviewPage() {
           >
             <div className="flex items-center mb-2">
               <Activity className="h-5 w-5 text-red-600 mr-2 group-hover:scale-110 transition-transform" />
-              <h3 className="text-sm sm:text-base font-semibold text-gray-900">Remarks & Records</h3>
+              <h3 className="text-sm sm:text-base font-semibold text-gray-900">Red-Flagged & Records</h3>
             </div>
-            <p className="text-xs sm:text-sm text-gray-600">View remarks from companies and track your status timeline</p>
+            <p className="text-xs sm:text-sm text-gray-600">View Red-Flagged from companies and track your status timeline</p>
           </Link>
 
           <Link 

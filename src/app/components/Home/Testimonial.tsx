@@ -5,72 +5,72 @@ import { Star, Quote } from 'lucide-react'
 
 const testimonials = [
   {
-    name: "Rajesh Kumar",
+    name: "Varun Malhotra",
     role: "HR Director",
-    company: "Tech Innovations Pvt Ltd",
+    company: "Zephyr Dynamics Pvt Ltd",
     image: "👨‍💼",
     rating: 5,
     text: "Red-Flagged helped us identify a candidate who had accepted 3 offers in the past 6 months but never joined. This saved us from a costly hiring mistake!",
     gradient: "from-blue-500 to-cyan-500"
   },
   {
-    name: "Priya Sharma",
+    name: "Ananya Verma",
     role: "Talent Acquisition Lead",
-    company: "Digital Solutions Inc",
+    company: "NexusSphere Technologies",
     image: "👩‍💼",
     rating: 5,
     text: "We discovered a candidate was Red-flagged by 2 companies for unprofessional conduct. Red-Flagged's database is a game-changer for recruitment!",
     gradient: "from-purple-500 to-pink-500"
   },
   {
-    name: "Amit Patel",
+    name: "Rohan Kapoor",
     role: "CEO",
-    company: "StartupXYZ",
+    company: "ApexVenture Solutions",
     image: "👨‍💻",
     rating: 5,
     text: "The transparency Red-Flagged provides is unmatched. We now verify every candidate's history before making an offer. Our hiring success rate improved by 70%!",
     gradient: "from-green-500 to-emerald-500"
   },
   {
-    name: "Sneha Reddy",
+    name: "Ishita Nair",
     role: "Recruitment Manager",
-    company: "Global Tech Corp",
+    company: "StellarWorks Global",
     image: "👩‍💼",
     rating: 5,
     text: "Found out a candidate had accepted offers from 5 companies in 4 months and ghosted all of them. Red-Flagged saved us time, money, and frustration!",
     gradient: "from-red-500 to-orange-500"
   },
   {
-    name: "Vikram Singh",
+    name: "Karan Oberoi",
     role: "HR Head",
-    company: "Enterprise Solutions",
+    company: "QuantumEdge Systems",
     image: "👨‍💼",
     rating: 5,
     text: "Red-Flagged's Red-flagged verification helped us avoid hiring someone with a history of data theft. This platform is essential for every HR team!",
     gradient: "from-indigo-500 to-purple-500"
   },
   {
-    name: "Kavita Desai",
+    name: "Meera Iyer",
     role: "Hiring Manager",
-    company: "Innovation Labs",
+    company: "Catalyst Innovations",
     image: "👩‍💻",
     rating: 5,
     text: "We verified a candidate who had 4 no-show records. Red-Flagged's data prevented what would have been our worst hire. Absolutely worth it!",
     gradient: "from-yellow-500 to-orange-500"
   },
   {
-    name: "Arjun Mehta",
+    name: "Aditya Menon",
     role: "VP of HR",
-    company: "Mega Corp Industries",
+    company: "VertexCore Industries",
     image: "👨‍💼",
     rating: 5,
     text: "The platform revealed a pattern of offer-hoarding behavior we wouldn't have caught otherwise. Red-Flagged is now mandatory in our hiring process!",
     gradient: "from-teal-500 to-cyan-500"
   },
   {
-    name: "Neha Gupta",
+    name: "Sanjana Joshi",
     role: "Talent Partner",
-    company: "Growth Ventures",
+    company: "Momentum Ventures",
     image: "👩‍💼",
     rating: 5,
     text: "Found a candidate Red-flagged for violating NDAs at previous companies. Red-Flagged's verification saved us from a potential legal nightmare!",

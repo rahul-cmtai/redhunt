@@ -12,14 +12,14 @@ export default function StatsSection() {
 
   const stats = [
     { 
-      value: '100+', 
+      value: '200+', 
       label: 'Companies', 
       icon: Users,
       gradient: 'from-red-500 to-red-600',
       bgGradient: 'from-red-50 to-red-100'
     },
     { 
-      value: '5K+', 
+      value: '20K+', 
       label: 'Candidates Verified', 
       icon: Shield,
       gradient: 'from-red-500 to-red-600',

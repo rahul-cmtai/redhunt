@@ -249,7 +249,7 @@ export default function AdminOverviewPage() {
                   <div className="text-sm font-medium text-gray-900">Candidate Users</div>
                   <UserCheck className="h-5 w-5 text-purple-600 group-hover:translate-x-1 transition-transform" />
                 </div>
-                <p className="text-xs sm:text-sm text-gray-600">Manage candidate account approvals and remark.</p>
+                <p className="text-xs sm:text-sm text-gray-600">Manage candidate account approvals and Red-Flagged.</p>
                 <div className="mt-2 flex items-center text-xs text-purple-600 group-hover:underline">
                   Go to Users <ArrowRight className="h-3 w-3 ml-1" />
                 </div>
@@ -260,12 +260,12 @@ export default function AdminOverviewPage() {
                 className="p-4 rounded-md bg-amber-50/60 border border-amber-100 hover:bg-amber-50 transition-colors group"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium text-gray-900">Updated Remark</div>
+                  <div className="text-sm font-medium text-gray-900">Updated Red-Flagged</div>
                   <Clock className="h-5 w-5 text-amber-600 group-hover:translate-x-1 transition-transform" />
                 </div>
-                <p className="text-xs sm:text-sm text-gray-600">Manage candidate updated remarks and timeline entries.</p>
+                <p className="text-xs sm:text-sm text-gray-600">Manage candidate updated Red-Flagged and timeline entries.</p>
                 <div className="mt-2 flex items-center text-xs text-amber-600 group-hover:underline">
-                  Go to Remark <ArrowRight className="h-3 w-3 ml-1" />
+                  Go to Red-Flagged <ArrowRight className="h-3 w-3 ml-1" />
                 </div>
               </Link>
             </div>

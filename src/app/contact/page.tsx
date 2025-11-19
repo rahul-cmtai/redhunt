@@ -11,9 +11,9 @@ import {
   Clock, 
   Send,
   MessageSquare,
-  Headphones,
   Globe,
-  CheckCircle
+  CheckCircle,
+  ArrowRight
 } from 'lucide-react'
 
 export default function ContactUs() {
@@ -27,14 +27,30 @@ export default function ContactUs() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setSubmitError(null)
     
-    // Simulate form submission
-    setTimeout(() => {
-      setIsSubmitting(false)
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/contact-leads`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to submit contact form')
+      }
+
       setSubmitSuccess(true)
       setFormData({
         name: '',
@@ -47,7 +63,11 @@ export default function ContactUs() {
       
       // Reset success message after 5 seconds
       setTimeout(() => setSubmitSuccess(false), 5000)
-    }, 1500)
+    } catch (error: any) {
+      setSubmitError(error.message || 'Something went wrong. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -83,63 +103,78 @@ export default function ContactUs() {
 
       {/* Contact Info Cards */}
       <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-            <div className="bg-gradient-to-br from-brand-50 to-white p-6 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300">
-              <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mb-4">
-                <Mail className="h-6 w-6 text-brand" />
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-8 mb-16">
+            <div className="w-full bg-gradient-to-br from-brand-50 via-white to-white p-8 rounded-3xl shadow-lg border border-brand/10 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-14 h-14 bg-brand-100 rounded-2xl flex items-center justify-center">
+                  <Mail className="h-6 w-6 text-brand" />
+                </div>
+                <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wide bg-white rounded-full text-brand border border-brand/20">
+                  Response in <strong className="font-bold">under 12h</strong>
+                </span>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Us</h3>
-              <p className="text-gray-600 text-sm mb-3">Drop us a line anytime</p>
-              <a href="mailto:support@red-flagged.com" className="text-brand hover:text-brand-700 font-medium text-sm">
-                support@red-flagged.com
-              </a>
-            </div>
-
-            <div className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
-                <Phone className="h-6 w-6 text-blue-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Call Us</h3>
-              <p className="text-gray-600 text-sm mb-3">Mon-Fri 9am to 6pm EST</p>
-              <a href="tel:+15551234567" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
-                +1 (555) 123-4567
-              </a>
-            </div>
-
-            <div className="bg-gradient-to-br from-green-50 to-white p-6 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
-                <MapPin className="h-6 w-6 text-green-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Visit Us</h3>
-              <p className="text-gray-600 text-sm mb-3">Our headquarters</p>
-              <p className="text-green-600 font-medium text-sm">
-                San Francisco, CA 94102
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Email Support</h3>
+              <p className="text-gray-600 text-sm mb-5">
+                Drop us a line and one of our specialists will follow up with demo details, pricing, or technical answers.
               </p>
+              <a
+                href="mailto:support@red-flagged.com"
+                className="inline-flex items-center gap-2 text-brand font-semibold text-base hover:text-brand-700"
+              >
+                support@red-flagged.com
+                <ArrowRight className="h-4 w-4" />
+              </a>
+              <ul className="mt-6 space-y-2 text-sm text-gray-500">
+                <li>• Monday – Friday, 9 AM – 7 PM IST</li>
+                <li>• Enterprise onboarding assistance</li>
+                <li>• Dedicated CSM for premium plans</li>
+              </ul>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-50 to-white p-6 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
-                <Headphones className="h-6 w-6 text-purple-600" />
+            <div className="w-full bg-gradient-to-br from-blue-50 via-white to-white p-8 rounded-3xl shadow-lg border border-blue-100 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center">
+                  <Phone className="h-6 w-6 text-blue-600" />
+                </div>
+                <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wide bg-white rounded-full text-blue-600 border border-blue-200">
+                  Priority Line
+                </span>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Live Chat</h3>
-              <p className="text-gray-600 text-sm mb-3">Available 24/7</p>
-              <button className="text-purple-600 hover:text-purple-700 font-medium text-sm">
-                Start Chat →
-              </button>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Call Us</h3>
+              <p className="text-gray-600 text-sm mb-5">
+                Speak directly with a Red-Flagged specialist for onboarding help, success planning, or urgent escalation.
+              </p>
+              <Link
+                href="tel:+1-800-555-0199"
+                className="inline-flex items-center gap-2 text-blue-600 font-semibold text-base hover:text-blue-700"
+              >
+                +1 (800) 555-0199
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <ul className="mt-6 space-y-2 text-sm text-gray-500">
+                <li>• Monday – Friday, 8 AM – 10 PM IST</li>
+                <li>• Weekend emergency support for enterprise</li>
+                <li>• Direct line to candidate verification desk</li>
+              </ul>
             </div>
           </div>
 
           {/* Main Contact Form */}
-          <div className="grid lg:grid-cols-2 gap-12">
-            {/* Form */}
-            <div className="bg-white rounded-2xl shadow-lg p-8">
+          <div className="flex justify-center">
+            <div className="bg-white rounded-2xl shadow-lg p-8 lg:p-10 w-full max-w-5xl">
               <h2 className="text-3xl font-bold text-gray-900 mb-6">Send Us a Message</h2>
               
               {submitSuccess && (
                 <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
                   <CheckCircle className="h-5 w-5 text-green-600" />
                   <p className="text-green-700 font-medium">Message sent successfully! We&apos;ll get back to you soon.</p>
+                </div>
+              )}
+
+              {submitError && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
+                  <span className="text-red-700 text-sm font-medium">{submitError}</span>
                 </div>
               )}
 
@@ -223,9 +258,7 @@ export default function ContactUs() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand transition-all"
                   >
                     <option value="">Select a subject</option>
-                    <option value="demo">Request a Demo</option>
                     <option value="pricing">Pricing Inquiry</option>
-                    <option value="support">Technical Support</option>
                     <option value="partnership">Partnership Opportunity</option>
                     <option value="other">Other</option>
                   </select>
@@ -268,7 +301,7 @@ export default function ContactUs() {
             </div>
 
             {/* Additional Info */}
-            <div className="space-y-8">
+            {/* <div className="space-y-8">
               <div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-6">Get Quick Answers</h2>
                 <p className="text-gray-600 mb-8">
@@ -327,7 +360,7 @@ export default function ContactUs() {
                   Schedule a Demo
                 </Link>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </section>

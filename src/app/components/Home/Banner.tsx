@@ -115,7 +115,7 @@ export default function Banner() {
               ease: "easeInOut"
             }}
           >
-            Fraudulent Candidates?
+            High-Risk Candidates?
           </motion.span>
         </motion.h2>
 

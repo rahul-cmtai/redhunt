@@ -119,10 +119,10 @@ export default function BenefitsCTASection() {
               whileTap={{ scale: 0.95 }}
             >
               <Link 
-                href="/demo" 
+                href="/employer/register" 
                 className="bg-white text-brand px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors inline-flex items-center justify-center gap-2 shadow-2xl group"
               >
-                Start Free Trial
+                Join Us
                 <motion.div
                   animate={{ x: [0, 5, 0] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
@@ -146,7 +146,7 @@ export default function BenefitsCTASection() {
                   whileHover={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.3 }}
                 />
-                <span className="relative">Talk to Sales</span>
+                <span className="relative">Contact Us</span>
               </Link>
             </motion.div>
           </motion.div>

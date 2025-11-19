@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import axios from 'axios'
-import { LogOut, LayoutDashboard, Building2, Users, UserCheck, FileText, Bell } from 'lucide-react'
+import { LogOut, LayoutDashboard, Building2, Users, UserCheck, FileText, Bell, Mail, BookOpen } from 'lucide-react'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
@@ -68,8 +68,10 @@ export default function AdminDashboardLayout({
     { href: '/admin/dashboard/overview', label: 'Dashboard', shortLabel: 'Home', icon: LayoutDashboard },
     { href: '/admin/dashboard/employers', label: 'Employers', shortLabel: 'Employers', icon: Building2 },
     { href: '/admin/dashboard/candidates', label: 'Candidates added by Employer', shortLabel: 'Candidates added by Employer', icon: Users },
-    { href: '/admin/dashboard/candidate-users', label: 'Join Candidates', shortLabel: 'Join Candidates', icon: UserCheck },
-    { href: '/admin/dashboard/update-history', label: 'Updated Remarks', shortLabel: 'Remarks', icon: FileText },
+    { href: '/admin/dashboard/candidate-users', label: 'Registered Candidates', shortLabel: 'Registered Candidates', icon: UserCheck },
+    { href: '/admin/dashboard/update-history', label: 'Updated Red-Flagged', shortLabel: 'Red-Flagged', icon: FileText },
+    { href: '/admin/dashboard/contact-leads', label: 'Contact Leads', shortLabel: 'Contact', icon: Mail },
+    { href: '/admin/dashboard/blogs', label: 'Blogs', shortLabel: 'Blogs', icon: BookOpen },
   ]
 
   if (isAuthenticated === null) {
