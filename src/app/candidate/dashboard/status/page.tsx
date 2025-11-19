@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Activity, MessageSquare, Building2, User, Briefcase, MapPin, DollarSign, TrendingUp, Calendar, Clock, CheckCircle2, FileText, Sparkles } from 'lucide-react'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.red-flagged.com'
 
 export default function StatusPage() {
   const [profile, setProfile] = useState<any>(null)

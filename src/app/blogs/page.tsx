@@ -8,7 +8,7 @@ import { Calendar, Clock, ArrowRight, Loader2, BookOpen } from 'lucide-react'
 import { motion, useInView } from 'framer-motion'
 import axios from 'axios'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.red-flagged.com'
 
 interface BlogPost {
   _id: string

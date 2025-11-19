@@ -6,7 +6,7 @@ import Link from 'next/link'
 import axios from 'axios'
 import { LogOut, LayoutDashboard, Building2, Users, UserCheck, FileText, Bell, Mail, BookOpen } from 'lucide-react'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.red-flagged.com'
 
 export default function AdminDashboardLayout({
   children,

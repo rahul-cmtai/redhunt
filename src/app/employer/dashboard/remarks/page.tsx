@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { FileText, Building2, User, Calendar, Clock, MessageSquare, Search, Filter, Sparkles, Activity, Briefcase, ChevronDown, ChevronUp } from 'lucide-react'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.red-flagged.com'
 
 export default function RemarksPage() {
   const [allRemarks, setAllRemarks] = useState<any[]>([])

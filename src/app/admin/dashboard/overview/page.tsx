@@ -5,7 +5,7 @@ import Link from 'next/link'
 import axios from 'axios'
 import { Users, UserCheck, Shield, Clock, TrendingUp, CheckCircle, AlertTriangle, Building2, ArrowRight } from 'lucide-react'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.red-flagged.com'
 
 interface DashboardStat {
   title: string

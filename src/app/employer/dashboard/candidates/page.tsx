@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Users, Search, Plus, User, Mail, Phone, Shield, CheckCircle, XCircle, Clock, X, FileText, Calendar, Briefcase, Building2, Eye, MapPin, DollarSign, TrendingUp, Edit, Save, MessageSquare, AlertCircle, Lock } from 'lucide-react'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.red-flagged.com'
 
 export default function CandidatesPage() {
   const [candidates, setCandidates] = useState<any[]>([])

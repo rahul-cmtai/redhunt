@@ -4,7 +4,7 @@ import { useState } from 'react'
 import axios from 'axios'
 import { Loader2 } from 'lucide-react'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.red-flagged.com'
 
 export default function AdminUpdateHistoryPage() {
   const [historySearchQuery, setHistorySearchQuery] = useState('')
