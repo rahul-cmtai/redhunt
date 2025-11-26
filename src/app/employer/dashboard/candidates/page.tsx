@@ -4,13 +4,12 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Users, Search, Plus, User, Mail, Phone, Shield, CheckCircle, XCircle, Clock, X, FileText, Calendar, Briefcase, Building2, Eye, MapPin, DollarSign, TrendingUp, Edit, Save, MessageSquare, AlertCircle, Lock } from 'lucide-react'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.red-flagged.com'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 export default function CandidatesPage() {
   const [candidates, setCandidates] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterType, setFilterType] = useState<'all' | 'invited' | 'verified'>('all')
   const [showAddForm, setShowAddForm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
@@ -38,20 +37,26 @@ export default function CandidatesPage() {
     verificationNotes: '',
     notes: ''
   })
-  
+  const [editingHistoryId, setEditingHistoryId] = useState<string | null>(null)
+  const [editingHistoryNotes, setEditingHistoryNotes] = useState('')
+  const [editingHistoryLoading, setEditingHistoryLoading] = useState(false)
+  const [editingHistoryError, setEditingHistoryError] = useState<string | null>(null)
+  const [invitedNotesEditing, setInvitedNotesEditing] = useState(false)
+  const [invitedNotesValue, setInvitedNotesValue] = useState('')
+  const [invitedNotesSaving, setInvitedNotesSaving] = useState(false)
+  const [invitedNotesMode, setInvitedNotesMode] = useState<'add' | 'edit'>('add')
+ 
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     mobile: '',
+    panNumber: '',
+    uan: '',
     position: '',
     offerDate: '',
-    offerStatus: '',
-    reason: '',
-    uan: '',
-    panNumber: '',
-    designation: '',
-    currentCompany: '',
     joiningDate: '',
+    reason: '',
     notes: ''
   })
 
@@ -91,12 +96,25 @@ export default function CandidatesPage() {
     fetchCandidates()
   }, [])
 
+  useEffect(() => {
+    if (showAddForm) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [showAddForm])
+
   const handleViewCandidate = async (candidate: any) => {
     if (!isCandidateVerified(candidate)) {
-      // For invited candidates, just show basic info
+      // For invited candidates, just show basic info and enable inline notes editing
       setSelectedCandidate(candidate)
       setCandidateDetails(candidate)
       setUpdateHistory([])
+      setInvitedNotesValue(candidate.notes || '')
+      setInvitedNotesEditing(false)
       setShowViewModal(true)
       return
     }
@@ -263,6 +281,105 @@ export default function CandidatesPage() {
     }
   }
 
+  const handleStartEditHistory = (entry: any) => {
+    const id = entry._id || entry.id
+    if (!id) return
+    setEditingHistoryId(id)
+    setEditingHistoryNotes(entry.notes || '')
+    setEditingHistoryError(null)
+  }
+
+  const handleCancelEditHistory = () => {
+    setEditingHistoryId(null)
+    setEditingHistoryNotes('')
+    setEditingHistoryLoading(false)
+    setEditingHistoryError(null)
+  }
+
+  const handleSaveEditHistory = async () => {
+    if (!selectedCandidate || !editingHistoryId) return
+    try {
+      setEditingHistoryLoading(true)
+      setEditingHistoryError(null)
+
+      const token = getToken()
+      if (!token) throw new Error('Not authenticated')
+
+      const candidateId = selectedCandidate.id || selectedCandidate._id
+
+      await axios.patch(
+        `${API_BASE_URL}/api/employer/candidate-users/${candidateId}/update-history/${editingHistoryId}`,
+        { notes: editingHistoryNotes },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+
+      // Refresh history after successful update
+      await handleViewCandidate(selectedCandidate)
+      setEditingHistoryId(null)
+      setEditingHistoryNotes('')
+    } catch (err: any) {
+      setEditingHistoryError(
+        err?.response?.data?.message || err?.message || 'Failed to update remark'
+      )
+    } finally {
+      setEditingHistoryLoading(false)
+    }
+  }
+
+  const handleSaveInvitedNotes = async () => {
+    if (!selectedCandidate) return
+    try {
+      setInvitedNotesSaving(true)
+      setAddError(null)
+      setAddSuccess(null)
+
+      const token = getToken()
+      if (!token) throw new Error('Not authenticated')
+
+      const candidateId = selectedCandidate.id || selectedCandidate._id
+
+      const { data } = await axios.patch(
+        `${API_BASE_URL}/api/employer/candidates/${candidateId}`,
+        { notes: invitedNotesValue, historyMode: invitedNotesMode },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+
+      const updatedCandidate = data?.candidate || null
+
+      // Update local state so UI and timeline reflect latest data
+      if (updatedCandidate) {
+        setCandidateDetails(updatedCandidate)
+        setSelectedCandidate(updatedCandidate)
+        setCandidates((prev: any[]) =>
+          Array.isArray(prev)
+            ? prev.map((c: any) =>
+                (c.id || c._id) === (updatedCandidate.id || updatedCandidate._id) ? updatedCandidate : c
+              )
+            : prev
+        )
+      } else {
+        // Fallback: at least update notes field locally
+        setCandidateDetails((prev: any) =>
+          prev ? { ...prev, notes: invitedNotesValue } : prev
+        )
+        setSelectedCandidate((prev: any) =>
+          prev ? { ...prev, notes: invitedNotesValue } : prev
+        )
+      }
+
+      setAddSuccess('Red-Flagged remarks updated successfully!')
+      setInvitedNotesEditing(false)
+      // also refresh list in background
+      fetchCandidates()
+    } catch (err: any) {
+      setAddError(
+        err?.response?.data?.message || err?.message || 'Failed to update remarks'
+      )
+    } finally {
+      setInvitedNotesSaving(false)
+    }
+  }
+
   const handleSearchByPanUan = async () => {
     if (!searchByPanUan.trim()) {
       setSearchError('Please enter PAN or UAN')
@@ -301,26 +418,36 @@ export default function CandidatesPage() {
       const token = getToken()
       if (!token) throw new Error('Not authenticated')
       
+      const trimmedFirstName = formData.firstName.trim()
+      const trimmedLastName = formData.lastName.trim()
+      const combinedName = [trimmedFirstName, trimmedLastName].filter(Boolean).join(' ').trim()
+
+      const payload = {
+        ...formData,
+        firstName: trimmedFirstName,
+        lastName: trimmedLastName,
+        name: combinedName,
+        fullName: combinedName
+      }
+
       const { data } = await axios.post(
         `${API_BASE_URL}/api/employer/candidates`,
-        formData,
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       )
       
       setAddSuccess('Candidate added successfully!')
       setFormData({
-        name: '',
+        firstName: '',
+        lastName: '',
         email: '',
         mobile: '',
+        panNumber: '',
+        uan: '',
         position: '',
         offerDate: '',
-        offerStatus: '',
-        reason: '',
-        uan: '',
-        panNumber: '',
-        designation: '',
-        currentCompany: '',
         joiningDate: '',
+        reason: '',
         notes: ''
       })
       setTimeout(() => {
@@ -353,6 +480,16 @@ export default function CandidatesPage() {
     return false
   }
 
+  const getCandidateDisplayName = (c: any) => {
+    const parts = [c.firstName, c.lastName]
+      .map((part: string) => (typeof part === 'string' ? part.trim() : ''))
+      .filter(Boolean)
+    if (parts.length) return parts.join(' ')
+    if (typeof c.fullName === 'string' && c.fullName.trim()) return c.fullName
+    if (typeof c.name === 'string' && c.name.trim()) return c.name
+    return 'N/A'
+  }
+
   // Helper function to check if employer can update this candidate
   const canUpdateCandidate = (c: any) => {
     // If candidate is not verified, they can't be updated (only invited candidates)
@@ -369,60 +506,68 @@ export default function CandidatesPage() {
     return true
   }
 
+  const belongsToThisEmployer = (c: any) => {
+    if (c.wasInvitedByThisEmployer !== undefined) return c.wasInvitedByThisEmployer
+    if (c.invitedByThisEmployer !== undefined) return c.invitedByThisEmployer
+    if (c.canUpdate !== undefined) return c.canUpdate
+    // Non-verified candidates listed here are invitation drafts created by this employer
+    if (!isCandidateVerified(c)) return true
+    return false
+  }
+
+  const matchesSearchQuery = (c: any, query: string) => {
+    const normalizedQuery = query.toLowerCase().trim()
+    if (!normalizedQuery) return true
+
+    const candidateName = getCandidateDisplayName(c).toLowerCase()
+    const email = (c.email || c.primaryEmail || '').toLowerCase()
+    const phone = (c.mobile || c.mobileNumber || c.phone || '').toLowerCase().replace(/[\s\-()]/g, '')
+    const pan = (c.panNumber || c.pan || '').toLowerCase()
+    const uan = (c.uanNumber || c.uan || '').toLowerCase()
+    const normalizedPhoneQuery = normalizedQuery.replace(/[\s\-()]/g, '')
+
+    return (
+      candidateName.includes(normalizedQuery) ||
+      email.includes(normalizedQuery) ||
+      phone.includes(normalizedPhoneQuery) ||
+      pan.includes(normalizedQuery) ||
+      uan.includes(normalizedPhoneQuery)
+    )
+  }
+
+  const ownedCandidates = candidates.filter((c: any) => belongsToThisEmployer(c))
+
   const filteredCandidates = candidates.filter((c: any) => {
-    const normalizedQuery = searchQuery.toLowerCase()
-    const matchesSearch = !searchQuery || 
-      (c.fullName || c.name || '').toLowerCase().includes(normalizedQuery) ||
-      (c.email || '').toLowerCase().includes(normalizedQuery) ||
-      (c.panNumber || c.pan || '').toLowerCase().includes(normalizedQuery)
-    
-    const isVerified = isCandidateVerified(c)
-    
-    // Filter by type: 'invited' means not verified, 'verified' means verified
-    // Backend already filters out invited candidates that have registered
-    if (filterType === 'all') return matchesSearch
-    if (filterType === 'invited') return matchesSearch && !isVerified && c.type !== 'verified'
-    if (filterType === 'verified') return matchesSearch && isVerified && c.type === 'verified'
-    
-    return matchesSearch
+    const hasSearch = searchQuery.trim().length > 0
+    if (hasSearch) {
+      return matchesSearchQuery(c, searchQuery)
+    }
+    return belongsToThisEmployer(c)
   })
 
   const stats = {
-    total: candidates.length,
-    invited: candidates.filter((c: any) => !isCandidateVerified(c) && c.type !== 'verified').length,
-    verified: candidates.filter((c: any) => isCandidateVerified(c) && c.type === 'verified').length
+    total: ownedCandidates.length
   }
 
   return (
     <>
+      <div className={showAddForm ? 'blur-sm pointer-events-none select-none transition duration-200' : 'transition duration-200'}>
       {/* Header */}
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Candidates</h1>
-        <p className="text-sm sm:text-base text-gray-600 mt-1">Manage and verify candidate credentials</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Candidates Red-Flag</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-1">Manage and view red-flag candidates</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs sm:text-sm text-gray-500">Total</div>
-            <Users className="h-4 w-4 text-blue-500" />
+      {/* Stats Card */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div className="bg-gradient-to-r from-red-500 via-red-600 to-red-700 text-white rounded-2xl shadow-xl p-6 flex items-center justify-between border border-red-500/30">
+          <div>
+            <p className="text-base sm:text-lg font-medium opacity-90 tracking-wide">Total Candidates</p>
+            <p className="text-4xl sm:text-5xl font-extrabold mt-2 drop-shadow-sm">{stats.total}</p>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-gray-900">{stats.total}</div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs sm:text-sm text-gray-500">Invited</div>
-            <Clock className="h-4 w-4 text-yellow-500" />
+          <div className="p-4 sm:p-5 bg-white/20 rounded-2xl backdrop-blur-sm border border-white/30">
+            <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-yellow-600">{stats.invited}</div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs sm:text-sm text-gray-500">Verified</div>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold text-green-600">{stats.verified}</div>
         </div>
       </div>
 
@@ -471,7 +616,7 @@ export default function CandidatesPage() {
                       <p><strong>Found {searchResult.candidates.length} candidate(s):</strong></p>
                       {searchResult.candidates.map((c: any, idx: number) => (
                         <div key={idx} className="bg-white p-3 rounded border border-blue-200">
-                          <p><strong>Name:</strong> {c.name || c.fullName || 'N/A'}</p>
+                      <p><strong>Name:</strong> {getCandidateDisplayName(c)}</p>
                           <p><strong>Email:</strong> {c.email || 'N/A'}</p>
                           <p><strong>UAN:</strong> {c.uan || c.uanNumber || 'N/A'}</p>
                           {c.mobileNumber && <p><strong>Mobile:</strong> {c.mobileNumber}</p>}
@@ -481,7 +626,7 @@ export default function CandidatesPage() {
                   ) : searchResult.candidate ? (
                     <>
                       <p><strong>Found:</strong> Yes</p>
-                      <p><strong>Candidate:</strong> {searchResult.candidate.name || searchResult.candidate.fullName || 'N/A'}</p>
+                      <p><strong>Candidate:</strong> {getCandidateDisplayName(searchResult.candidate)}</p>
                       <p><strong>Email:</strong> {searchResult.candidate.email || 'N/A'}</p>
                       <p><strong>UAN:</strong> {searchResult.candidate.uan || searchResult.candidate.uanNumber || 'N/A'}</p>
                       {searchResult.offers !== undefined && <p><strong>Offers:</strong> {searchResult.offers}</p>}
@@ -502,257 +647,27 @@ export default function CandidatesPage() {
       {/* Add Candidate Button */}
       <div className="mb-6 flex justify-end">
         <button
-          onClick={() => setShowAddForm(!showAddForm)}
+          onClick={() => setShowAddForm(true)}
           className="flex items-center gap-2 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
         >
           <Plus className="h-4 w-4" />
-          {showAddForm ? 'Cancel' : 'Add Candidate'}
+          Add Candidate
         </button>
       </div>
-
-      {/* Add Candidate Form */}
-      {showAddForm && (
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Candidate</h3>
-          {addSuccess && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
-              {addSuccess}
-            </div>
-          )}
-          {addError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
-              {addError}
-            </div>
-          )}
-          <form onSubmit={handleAddCandidate} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                <input
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mobile *</label>
-                <input
-                  type="tel"
-                  required
-                  value={formData.mobile}
-                  onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Position/Job Role *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.position}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Offer Date *</label>
-                <input
-                  type="date"
-                  required
-                  value={formData.offerDate}
-                  onChange={(e) => setFormData({ ...formData, offerDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Offer Status *</label>
-                <select
-                  required
-                  value={formData.offerStatus}
-                  onChange={(e) => setFormData({ ...formData, offerStatus: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                >
-                  <option value="">Select Status</option>
-                  <option value="Offer Accepted">Offer Accepted</option>
-                  <option value="Offer Rejected">Offer Rejected</option>
-                  <option value="Not Joined After Acceptance">Not Joined After Acceptance</option>
-                  <option value="Ghosted After Offer">Ghosted After Offer</option>
-                  <option value="Joined But Left Early">Joined But Left Early</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Reason *</label>
-                <select
-                  required
-                  value={formData.reason}
-                  onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                >
-                  <option value="">Select Reason</option>
-                  <option value="Accepted Another Offer">Accepted Another Offer</option>
-                  <option value="Counter Offer from Current Company">Counter Offer from Current Company</option>
-                  <option value="Salary Expectations Not Met">Salary Expectations Not Met</option>
-                  <option value="Location Not Suitable">Location Not Suitable</option>
-                  <option value="Family Issues">Family Issues</option>
-                  <option value="Health Issues">Health Issues</option>
-                  <option value="No Response After Acceptance">No Response After Acceptance</option>
-                  <option value="Ghosted Completely">Ghosted Completely</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">PAN Number</label>
-                <input
-                  type="text"
-                  value={formData.panNumber}
-                  onChange={(e) => setFormData({ ...formData, panNumber: e.target.value.toUpperCase() })}
-                  maxLength={10}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 uppercase"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">UAN</label>
-                <input
-                  type="text"
-                  value={formData.uan}
-                  onChange={(e) => setFormData({ ...formData, uan: e.target.value })}
-                  maxLength={12}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Designation</label>
-                <input
-                  type="text"
-                  value={formData.designation}
-                  onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Current Company</label>
-                <input
-                  type="text"
-                  value={formData.currentCompany}
-                  onChange={(e) => setFormData({ ...formData, currentCompany: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date (Given By the Candidate)</label>
-                <input
-                  type="date"
-                  value={formData.joiningDate}
-                  onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Red-Flagged</label>
-              <textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              />
-            </div>
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:bg-red-400 disabled:cursor-not-allowed"
-              >
-                {submitting ? 'Adding...' : 'Add Candidate'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddForm(false)
-                  setFormData({
-                    name: '',
-                    email: '',
-                    mobile: '',
-                    position: '',
-                    offerDate: '',
-                    offerStatus: '',
-                    reason: '',
-                    uan: '',
-                    panNumber: '',
-                    designation: '',
-                    currentCompany: '',
-                    joiningDate: '',
-                    notes: ''
-                  })
-                  setAddError(null)
-                  setAddSuccess(null)
-                }}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Search and Filter */}
+      {/* Search */}
       <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-gray-100 mb-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name, email, or PAN..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-            />
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilterType('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filterType === 'all'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilterType('invited')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filterType === 'invited'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Invited
-            </button>
-            <button
-              onClick={() => setFilterType('verified')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filterType === 'verified'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Verified
-            </button>
-          </div>
+        <label className="block text-xs sm:text-sm font-medium text-gray-600 mb-2">
+          Search
+        </label>
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search Candidate "
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+          />
         </div>
       </div>
 
@@ -775,7 +690,7 @@ export default function CandidatesPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                      <div className="flex items-center gap-3 mb-2 flex-wrap">
-                       <h3 className="text-lg font-semibold text-gray-900">{candidate.fullName || candidate.name || 'N/A'}</h3>
+                       <h3 className="text-lg font-semibold text-gray-900">{getCandidateDisplayName(candidate)}</h3>
                        {isCandidateVerified(candidate) ? (
                          <>
                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -792,7 +707,7 @@ export default function CandidatesPage() {
                        ) : (
                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                            <Clock className="h-3 w-3" />
-                           Invited
+                           Red-Flag
                          </span>
                        )}
                      </div>
@@ -838,6 +753,202 @@ export default function CandidatesPage() {
           </div>
         )}
       </div>
+      </div>
+
+      {/* Add Candidate Modal */}
+      {showAddForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowAddForm(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl border border-red-100 w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="flex items-start justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-red-50 to-white">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">Add New Candidate</h3>
+                <p className="text-sm text-gray-500">Fill in the details below to invite a candidate</p>
+              </div>
+              <button
+                onClick={() => setShowAddForm(false)}
+                className="text-gray-500 hover:text-red-600 transition-colors"
+                aria-label="Close add candidate modal"
+                type="button"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="px-6 py-4 overflow-y-auto max-h-[80vh]">
+              {addSuccess && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+                  {addSuccess}
+                </div>
+              )}
+              {addError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+                  {addError}
+                </div>
+              )}
+              <form onSubmit={handleAddCandidate} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* 1. First Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  {/* 2. Last Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  {/* 3. Email */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  {/* 4. Phone */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={formData.mobile}
+                      onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  {/* 5. PAN */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">PAN Number</label>
+                    <input
+                      type="text"
+                      value={formData.panNumber}
+                      onChange={(e) => setFormData({ ...formData, panNumber: e.target.value.toUpperCase() })}
+                      maxLength={10}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 uppercase"
+                    />
+                  </div>
+                  {/* 6. UAN */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">UAN</label>
+                    <input
+                      type="text"
+                      value={formData.uan}
+                      onChange={(e) => setFormData({ ...formData, uan: e.target.value })}
+                      maxLength={12}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  {/* 7. Position Job Role Add */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Position Job Role Add *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.position}
+                      onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  {/* 8. Offer Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Offer Date *</label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.offerDate}
+                      onChange={(e) => setFormData({ ...formData, offerDate: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  {/* 9. Joining Date (Given By the Candidate) */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date (Given By the Candidate)</label>
+                    <input
+                      type="date"
+                      value={formData.joiningDate}
+                      onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  {/* 10. Reason of Offer Rejection */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Reason of Offer Rejection *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.reason}
+                      onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                      placeholder="Explain briefly"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                </div>
+                {/* 11. Red-Flagged Remarks by the Employer */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Red-Flagged Remarks by the Employer</label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:bg-red-400 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? 'Adding...' : 'Add Candidate'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddForm(false)
+                      setFormData({
+                        firstName: '',
+                        lastName: '',
+                        email: '',
+                        mobile: '',
+                        panNumber: '',
+                        uan: '',
+                        position: '',
+                        offerDate: '',
+                        joiningDate: '',
+                        reason: '',
+                        notes: ''
+                      })
+                      setAddError(null)
+                      setAddSuccess(null)
+                    }}
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* View Candidate Modal */}
       {showViewModal && (
@@ -847,7 +958,7 @@ export default function CandidatesPage() {
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {candidateDetails?.fullName || candidateDetails?.name || 'Candidate Details'}
+                  {candidateDetails ? getCandidateDisplayName(candidateDetails) : 'Candidate Details'}
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
                   {isCandidateVerified(selectedCandidate) ? 'Verified Candidate' : 'Invited Candidate'}
@@ -894,10 +1005,22 @@ export default function CandidatesPage() {
                     <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-4">
                       <h4 className="text-sm font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-300">Basic Information</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {(candidateDetails?.fullName || candidateDetails?.name) && (
-                          <div>
+                        {candidateDetails && (
+                          <div className="sm:col-span-2">
                             <label className="text-xs text-gray-500 font-medium">Full Name</label>
-                            <p className="text-sm font-semibold text-gray-900">{candidateDetails.fullName || candidateDetails.name}</p>
+                            <p className="text-sm font-semibold text-gray-900">{getCandidateDisplayName(candidateDetails)}</p>
+                          </div>
+                        )}
+                        {candidateDetails?.firstName && (
+                          <div>
+                            <label className="text-xs text-gray-500 font-medium">First Name</label>
+                            <p className="text-sm font-semibold text-gray-900">{candidateDetails.firstName}</p>
+                          </div>
+                        )}
+                        {candidateDetails?.lastName && (
+                          <div>
+                            <label className="text-xs text-gray-500 font-medium">Last Name</label>
+                            <p className="text-sm font-semibold text-gray-900">{candidateDetails.lastName}</p>
                           </div>
                         )}
                         {(candidateDetails?.email || candidateDetails?.primaryEmail) && (
@@ -930,6 +1053,12 @@ export default function CandidatesPage() {
                             <p className="text-sm font-semibold text-gray-900">{candidateDetails.uanNumber || candidateDetails.uan || 'N/A'}</p>
                           </div>
                         )}
+                        {/* {candidateDetails?.notes && (
+                          <div className="sm:col-span-2">
+                            <label className="text-xs text-red-500 font-medium">Red-Flagged Remarks</label>
+                            <p className="text-sm font-semibold text-gray-900 whitespace-pre-line">{candidateDetails.notes}</p>
+                          </div>
+                        )} */}
                       </div>
                     </div>
 
@@ -976,10 +1105,10 @@ export default function CandidatesPage() {
                     <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-4">
                       <h4 className="text-sm font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-300">Professional Information</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {candidateDetails?.presentCompany && (
+                        {(candidateDetails?.presentCompany || candidateDetails?.currentCompany) && (
                           <div>
-                            <label className="text-xs text-gray-500 font-medium">Present Company</label>
-                            <p className="text-sm font-semibold text-gray-900">{candidateDetails.presentCompany}</p>
+                            <label className="text-xs text-gray-500 font-medium">Current Company of the candidate</label>
+                            <p className="text-sm font-semibold text-gray-900">{candidateDetails.presentCompany || candidateDetails.currentCompany}</p>
                           </div>
                         )}
                         {candidateDetails?.designation && (
@@ -1056,6 +1185,47 @@ export default function CandidatesPage() {
                         )}
                       </div>
                     </div>
+
+                    {/* Offer & Remarks Section */}
+                    {(candidateDetails?.position || candidateDetails?.offerDate || candidateDetails?.reason || candidateDetails?.joiningDate || candidateDetails?.notes) && (
+                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-4">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-300">Offer & Remarks</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {candidateDetails?.position && (
+                            <div>
+                              <label className="text-xs text-gray-500 font-medium">Position / Role</label>
+                              <p className="text-sm font-semibold text-gray-900">{candidateDetails.position}</p>
+                            </div>
+                          )}
+                          {candidateDetails?.offerDate && (
+                            <div>
+                              <label className="text-xs text-gray-500 font-medium">Offer Date</label>
+                              <p className="text-sm font-semibold text-gray-900">{new Date(candidateDetails.offerDate).toLocaleDateString()}</p>
+                            </div>
+                          )}
+                          {candidateDetails?.reason && (
+                            <div className="sm:col-span-2">
+                              <label className="text-xs text-gray-500 font-medium">Reason (Red-Flag)</label>
+                              <p className="text-sm font-semibold text-gray-900">{candidateDetails.reason}</p>
+                            </div>
+                          )}
+                          {candidateDetails?.joiningDate && (
+                            <div>
+                              <label className="text-xs text-gray-500 font-medium">Joining Date</label>
+                              <p className="text-sm font-semibold text-gray-900">{new Date(candidateDetails.joiningDate).toLocaleDateString()}</p>
+                            </div>
+                          )}
+                          {/* {candidateDetails?.notes && (
+                            <div className="sm:col-span-2">
+                              <label className="text-xs text-red-500 font-medium">Red-Flag Remarks</label>
+                              <p className="text-sm font-semibold text-gray-900 whitespace-pre-line">
+                                {candidateDetails.notes}
+                              </p>
+                            </div>
+                          )} */}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Account & Verification Information Section */}
                     <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-4">
@@ -1246,7 +1416,7 @@ export default function CandidatesPage() {
                     </div>
                   )}
 
-                  {/* Red-Flagged Timeline */}
+                  {/* Red-Flagged Timeline for verified candidates */}
                   {isCandidateVerified(selectedCandidate) && (
                     <div className="mb-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">Red-Flagged Status</h3>
@@ -1263,15 +1433,63 @@ export default function CandidatesPage() {
                                     <span className="text-sm font-semibold text-gray-900">{entry.companyName}</span>
                                   )}
                                 </div>
-                                <span className="text-xs text-gray-500">
-                                  {entry.date ? new Date(entry.date).toLocaleString() : ''}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-500">
+                                    {entry.date ? new Date(entry.date).toLocaleString() : ''}
+                                  </span>
+                                  {canUpdateCandidate(selectedCandidate) && entry.updatedByRole === 'employer' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStartEditHistory(entry)}
+                                      className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                    >
+                                      <Edit className="h-3 w-3" />
+                                      Edit
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                               <div className="text-sm text-gray-600 mb-2">
                                 <span>By: {entry.updatedByName || '-'} ({entry.updatedByRole || '-'})</span>
                               </div>
-                              {entry.notes && (
-                                <div className="text-sm text-gray-800 mb-2 bg-blue-50 p-2 rounded border-l-4 border-blue-400">{entry.notes}</div>
+                              {entry.notes && editingHistoryId !== (entry._id || entry.id) && (
+                                <div className="text-sm text-gray-800 mb-2 bg-blue-50 p-2 rounded border-l-4 border-blue-400">
+                                  {entry.notes}
+                                </div>
+                              )}
+                              {editingHistoryId === (entry._id || entry.id) && (
+                                <div className="mb-2">
+                                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                                    Edit Red-Flagged Remark
+                                  </label>
+                                  <textarea
+                                    value={editingHistoryNotes}
+                                    onChange={(e) => setEditingHistoryNotes(e.target.value)}
+                                    rows={2}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                  />
+                                  {editingHistoryError && (
+                                    <p className="mt-1 text-xs text-red-600">{editingHistoryError}</p>
+                                  )}
+                                  <div className="mt-2 flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={handleSaveEditHistory}
+                                      disabled={editingHistoryLoading}
+                                      className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed flex items-center gap-1"
+                                    >
+                                      <Save className="h-3 w-3" />
+                                      {editingHistoryLoading ? 'Saving...' : 'Save'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={handleCancelEditHistory}
+                                      className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
                               )}
                               {/* Show updated fields if present */}
                               {(entry.presentCompany || entry.designation || entry.workLocation || entry.currentCtc || entry.expectedHikePercentage || entry.noticePeriod || entry.negotiableDays || (Array.isArray(entry.skillSets) && entry.skillSets.length)) && (
@@ -1327,6 +1545,103 @@ export default function CandidatesPage() {
                       )}
                     </div>
                   )}
+
+                  {/* Red-Flagged Timeline for invited candidates (simple history array) */}
+                  {!isCandidateVerified(selectedCandidate) &&
+                    candidateDetails?.updateHistory &&
+                    Array.isArray(candidateDetails.updateHistory) &&
+                    candidateDetails.updateHistory.length > 0 && (
+                      <div className="mb-6">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-lg font-semibold text-gray-900">Red-Flagged Status</h3>
+                          {belongsToThisEmployer(selectedCandidate) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setInvitedNotesEditing(true)
+                                setInvitedNotesMode('add')
+                                setInvitedNotesValue('')
+                              }}
+                              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                            >
+                              <Edit className="h-4 w-4" />
+                              Add Red-Flag Remark
+                            </button>
+                          )}
+                        </div>
+
+                        {invitedNotesEditing && (
+                          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Add Red-Flagged Remark
+                            </label>
+                            <textarea
+                              value={invitedNotesValue}
+                              onChange={(e) => setInvitedNotesValue(e.target.value)}
+                              rows={3}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                            />
+                            <div className="mt-2 flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={handleSaveInvitedNotes}
+                                disabled={invitedNotesSaving}
+                                className="px-4 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed flex items-center gap-1"
+                              >
+                                <Save className="h-3 w-3" />
+                                {invitedNotesSaving ? 'Saving...' : 'Add Red-Flag Remark'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setInvitedNotesEditing(false)
+                                  setInvitedNotesValue(candidateDetails.notes || '')
+                                }}
+                                className="px-4 py-1.5 border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="space-y-4">
+                          {candidateDetails.updateHistory.map((entry: any, idx: number) => (
+                            <div
+                              key={entry._id || idx}
+                              className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">
+                                    Red-Flagged {entry.points ?? idx + 1}
+                                  </span>
+                                  {entry.companyName && (
+                                    <span className="text-sm font-semibold text-gray-900">
+                                      {entry.companyName}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-xs text-gray-500">
+                                  {entry.date ? new Date(entry.date).toLocaleString() : ''}
+                                </span>
+                              </div>
+                              <div className="text-sm text-gray-600 mb-2">
+                                <span>
+                                  By: {entry.updatedByName || candidateDetails.employerName || '-'} (
+                                  {entry.updatedByRole || 'employer'})
+                                </span>
+                              </div>
+                              {entry.notes && (
+                                <div className="text-sm text-gray-800 mb-2 bg-blue-50 p-2 rounded border-l-4 border-blue-400">
+                                  {entry.notes}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                 </>
               )}
             </div>

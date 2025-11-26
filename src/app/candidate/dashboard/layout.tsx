@@ -81,23 +81,22 @@ export default function DashboardLayout({
       <header className="border-b bg-white/70 backdrop-blur sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
-            <div className="flex items-center min-w-0">
-              <Link href="/" className="text-lg sm:text-xl font-bold text-red-600">Red-Flagged</Link>
-              <span className="hidden sm:inline ml-3 text-xs text-gray-500">Candidate Portal</span>
-            </div>
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <div className="text-xs sm:text-sm text-gray-600 truncate">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 truncate">
+              <span>
                 <span className="hidden sm:inline">Welcome, </span>
                 <span className="font-semibold text-gray-900">{profile?.name || 'Candidate'}</span>
-              </div>
-              <button 
-                onClick={handleLogout}
-                className="text-gray-700 hover:text-red-600 p-1.5 sm:p-2 transition-colors"
-                title="Logout"
-              >
-                <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
-              </button>
+              </span>
+              <span className="inline-block border-l border-gray-300 h-5 mx-2"></span>
+              <span className="text-[11px] sm:text-xs text-gray-500 font-normal">Candidate Portal</span>
             </div>
+            <button 
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg transition-colors flex items-center gap-1.5 text-[11px] sm:text-xs font-medium shadow-sm"
+              title="You want to logout?"
+            >
+              <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span>Logout</span>
+            </button>
           </div>
         </div>
       </header>

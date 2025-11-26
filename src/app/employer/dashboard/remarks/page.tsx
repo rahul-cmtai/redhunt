@@ -196,7 +196,7 @@ export default function RemarksPage() {
               </div>
               <h1 className="text-2xl sm:text-4xl font-bold">Red-Flagged Status</h1>
             </div>
-            <p className="text-red-50 text-sm sm:text-base mt-2">View all Red-Flagged and updates from verified candidates</p>
+            <p className="text-red-50 text-sm sm:text-base mt-2">View all Red-Flagged and updates from Red-Flag candidates</p>
           </div>
         </div>
       </div>

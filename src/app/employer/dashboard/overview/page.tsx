@@ -16,6 +16,25 @@ export default function EmployerOverviewPage() {
 
   const getToken = () => localStorage.getItem('employerToken') || sessionStorage.getItem('employerToken')
 
+  const isCandidateVerified = (c: any) => {
+    if (c.type === 'verified') return true
+    if (c.status === 'approved') return true
+    if (c.verifiedBy) return true
+    if (c.verified === true || c.verified === 'true') return true
+    if (c.emailVerified === true || c.emailVerified === 'true') return true
+    if (c.isVerified === true || c.isVerified === 'true') return true
+    return false
+  }
+
+  const belongsToThisEmployer = (c: any) => {
+    if (c.wasInvitedByThisEmployer !== undefined) return c.wasInvitedByThisEmployer
+    if (c.invitedByThisEmployer !== undefined) return c.invitedByThisEmployer
+    if (c.canUpdate !== undefined) return c.canUpdate
+    // Draft/invited candidates are always owned by the current employer
+    if (!isCandidateVerified(c)) return true
+    return false
+  }
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -28,8 +47,9 @@ export default function EmployerOverviewPage() {
         })
         
         const candidates = Array.isArray(data) ? data : (data?.candidates || data?.data || [])
-        const total = candidates.length
-        const pending = candidates.filter((c: any) => !c.verified || c.status === 'pending').length
+        const ownedCandidates = candidates.filter((c: any) => belongsToThisEmployer(c))
+        const total = ownedCandidates.length
+        const pending = ownedCandidates.filter((c: any) => !isCandidateVerified(c) || c.status === 'pending').length
         
         setStats({
           totalCandidates: total,
@@ -53,17 +73,18 @@ export default function EmployerOverviewPage() {
         <p className="text-sm sm:text-base text-gray-600 mt-1">Manage candidates and verify their credentials</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-5 border border-gray-100 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs sm:text-sm text-gray-500">Total Candidates</div>
-            <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
+      {/* Stats Card */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 sm:mb-8">
+        <div className="bg-gradient-to-r from-red-500 via-red-600 to-red-700 text-white rounded-2xl shadow-xl p-6 flex items-center justify-between border border-red-500/30">
+          <div>
+            <p className="text-base sm:text-lg font-medium opacity-90 tracking-wide">Total Candidates</p>
+            <p className="text-4xl sm:text-5xl font-extrabold mt-2 drop-shadow-sm">{stats.totalCandidates}</p>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-gray-900">{stats.totalCandidates}</div>
-          <p className="text-xs text-gray-500 mt-1">In your database</p>
+          <div className="p-4 sm:p-5 bg-white/20 rounded-2xl backdrop-blur-sm border border-white/30">
+            <Users className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+          </div>
         </div>
-
+{/* 
         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-5 border border-gray-100 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-2">
             <div className="text-xs sm:text-sm text-gray-500">Pending</div>
@@ -71,7 +92,7 @@ export default function EmployerOverviewPage() {
           </div>
           <div className="text-xl sm:text-2xl font-bold text-yellow-600">{stats.pendingVerifications}</div>
           <p className="text-xs text-gray-500 mt-1">Awaiting verification</p>
-        </div>
+        </div> */}
       </div>
 
       {/* What You Can Do */}

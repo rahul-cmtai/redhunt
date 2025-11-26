@@ -102,7 +102,8 @@ export default function CandidateRegister() {
 
   const [formData, setFormData] = useState({
     // Personal Information
-    name: '',
+    firstName: '',
+    lastName: '',
     fathersName: '',
     gender: '',
     dob: '',
@@ -147,7 +148,8 @@ export default function CandidateRegister() {
   }, [])
 
   const validateStep1 = () => {
-    if (!formData.name.trim()) return 'Name is required'
+    if (!formData.firstName.trim()) return 'First name is required'
+    if (!formData.lastName.trim()) return 'Last name is required'
     if (!formData.fathersName.trim()) return 'Father\'s name is required'
     if (!formData.gender) return 'Gender is required'
     if (!formData.dob) return 'Date of birth is required'
@@ -223,11 +225,16 @@ export default function CandidateRegister() {
     
     setIsSubmitting(true)
     try {
+      const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim()
+
       await axios.post(
         `${API_BASE_URL}/api/auth/candidate/register`,
         {
           // Personal Information
-          name: formData.name.trim(),
+          name: fullName,
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          fullName,
           fathersName: formData.fathersName.trim(),
           gender: formData.gender,
           dob: formData.dob,
@@ -347,27 +354,38 @@ export default function CandidateRegister() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-          <label className="block text-sm font-medium text-gray-700">Name *</label>
+          <label className="block text-sm font-medium text-gray-700">First Name *</label>
               <input
                 type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            value={formData.firstName}
+            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
-            placeholder="Enter your full name"
+            placeholder="Enter your first name"
                 required
               />
             </div>
             <div>
-          <label className="block text-sm font-medium text-gray-700">Father's Name *</label>
+          <label className="block text-sm font-medium text-gray-700">Last Name *</label>
           <input
             type="text"
-            value={formData.fathersName}
-            onChange={(e) => setFormData({ ...formData, fathersName: e.target.value })}
+            value={formData.lastName}
+            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
-            placeholder="Enter father's name"
+            placeholder="Enter your last name"
             required
           />
         </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Father's Name *</label>
+        <input
+          type="text"
+          value={formData.fathersName}
+          onChange={(e) => setFormData({ ...formData, fathersName: e.target.value })}
+          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+          placeholder="Enter father's name"
+          required
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -716,7 +734,7 @@ export default function CandidateRegister() {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h4 className="text-sm font-medium text-blue-900 mb-2">Registration Summary</h4>
         <div className="text-xs text-blue-800 space-y-1">
-          <p><strong>Name:</strong> {formData.name}</p>
+          <p><strong>Name:</strong> {[formData.firstName, formData.lastName].filter(Boolean).join(' ')}</p>
           <p><strong>Email:</strong> {formData.primaryEmail}</p>
           <p><strong>Company:</strong> {formData.presentCompany}</p>
           <p><strong>Designation:</strong> {formData.designation}</p>

@@ -63,7 +63,8 @@ export default function EmployerRegister() {
     companyName: '',
     address: '',
     panNumber: '',
-    hrName: '',
+    hrFirstName: '',
+    hrLastName: '',
     designation: '',
     contactNumber: '',
     email: '',
@@ -76,7 +77,8 @@ export default function EmployerRegister() {
     if (!formData.address.trim()) return 'Company address is required'
     if (!formData.panNumber.trim()) return 'PAN number is required'
     if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panNumber.trim())) return 'Enter a valid PAN number (e.g., ABCDE1234F)'
-    if (!formData.hrName.trim()) return 'Your name is required'
+    if (!formData.hrFirstName.trim()) return 'Your first name is required'
+    if (!formData.hrLastName.trim()) return 'Your last name is required'
     if (!formData.designation.trim()) return 'Designation is required'
     if (!formData.contactNumber.trim()) return 'Mobile number is required'
     if (!/^[0-9+\-()\s]{7,20}$/.test(formData.contactNumber.trim())) return 'Enter a valid mobile number'
@@ -98,13 +100,16 @@ export default function EmployerRegister() {
     }
     setIsSubmitting(true)
     try {   
+      const hrFullName = `${formData.hrFirstName.trim()} ${formData.hrLastName.trim()}`.trim()
       const { data } = await axios.post(
         `${API_BASE_URL}/api/auth/employer/register`,
         {
           companyName: formData.companyName.trim(),
           address: formData.address.trim(),
           panNumber: formData.panNumber.trim(),
-          hrName: formData.hrName.trim(),
+          hrFirstName: formData.hrFirstName.trim(),
+          hrLastName: formData.hrLastName.trim(),
+          hrName: hrFullName,
           designation: formData.designation.trim(),
           contactNumber: formData.contactNumber.trim(),
           email: formData.email.trim(),
@@ -113,7 +118,7 @@ export default function EmployerRegister() {
           status: 'pending',
           role: 'employer',
           // Aliases: some backends might use these keys instead
-          hrContact: formData.hrName.trim(),
+          hrContact: hrFullName,
           phone: formData.contactNumber.trim(),
           company: formData.companyName.trim()
         },
@@ -269,21 +274,36 @@ export default function EmployerRegister() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="hrName" className="block text-sm font-medium text-gray-700">
-                  Your Name
+                <label htmlFor="hrFirstName" className="block text-sm font-medium text-gray-700">
+                  Your First Name
                 </label>
                 <input
-                  id="hrName"
-                  name="hrName"
+                  id="hrFirstName"
+                  name="hrFirstName"
                   type="text"
                   required
-                  value={formData.hrName}
-                  onChange={(e) => setFormData({ ...formData, hrName: e.target.value })}
+                  value={formData.hrFirstName}
+                  onChange={(e) => setFormData({ ...formData, hrFirstName: e.target.value })}
                   className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
-                  placeholder="Suresh Nair"
+                  placeholder="Suresh"
                 />
               </div>
               <div>
+                <label htmlFor="hrLastName" className="block text-sm font-medium text-gray-700">
+                  Your Last Name
+                </label>
+                <input
+                  id="hrLastName"
+                  name="hrLastName"
+                  type="text"
+                  required
+                  value={formData.hrLastName}
+                  onChange={(e) => setFormData({ ...formData, hrLastName: e.target.value })}
+                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
+                  placeholder="Nair"
+                />
+              </div>
+              <div className="sm:col-span-2">
                 <label htmlFor="designation" className="block text-sm font-medium text-gray-700">
                   Designation
                 </label>
