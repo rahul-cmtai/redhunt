@@ -112,30 +112,34 @@ export default function StatusPage() {
 
   return (
     <>
-      {/* Attractive Header with Gradient */}
-      <div className="mb-6 sm:mb-8">
-        <div className="bg-gradient-to-r from-red-600 via-red-500 to-red-600 rounded-xl shadow-lg p-6 sm:p-8 text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-24 -mb-24"></div>
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="bg-white/20 backdrop-blur-sm p-3 rounded-lg">
-                <Sparkles className="h-6 w-6 sm:h-8 sm:w-8" />
-              </div>
-              <h1 className="text-2xl sm:text-4xl font-bold">Your Red-Flagged from companies</h1>
+      {/* Header - more compact, professional */}
+      <div className="mb-4 sm:mb-6">
+        <div className="bg-gradient-to-r from-red-600 via-red-500 to-red-600 rounded-lg shadow-md px-4 py-3 sm:px-5 sm:py-4 text-white">
+          <div className="flex items-center gap-2">
+            <div className="bg-white/15 backdrop-blur-sm p-2 rounded-md">
+              <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <p className="text-red-50 text-sm sm:text-base mt-2">Track your journey and application updates</p>
+            <div>
+              <h1 className="text-lg sm:text-xl font-semibold leading-snug">
+                Your Red-Flagged from companies
+              </h1>
+              <p className="text-[11px] sm:text-xs text-red-50/90 mt-0.5">
+                Track your journey and application updates
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 mb-6 sm:mb-8">
-        <div className="flex items-center justify-between mb-6 sm:mb-8">
+      <div className="bg-white rounded-lg shadow-sm p-4 sm:p-5 border border-gray-100 mb-6 sm:mb-8">
+        <div className="flex items-center justify-between mb-4 sm:mb-5">
           <div className="flex items-center gap-3">
-            <div className="bg-red-100 p-2 rounded-lg">
-              <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
+            <div className="bg-red-100 p-2 rounded-md">
+              <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
             </div>
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Red-Flagged History</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+              Red-Flagged History
+            </h3>
           </div>
         </div>
         {Array.isArray(timeline) && timeline.length > 0 ? (
@@ -143,7 +147,7 @@ export default function StatusPage() {
             {/* Timeline Line */}
             <div className="absolute left-6 sm:left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-red-200 via-red-300 to-red-200 hidden sm:block"></div>
             
-            <div className="space-y-6 sm:space-y-8">
+            <div className="space-y-4 sm:space-y-6">
               {timeline.map((h: any, idx: number) => (
                 <div key={idx} className="relative">
                   {/* Timeline Dot */}
@@ -151,38 +155,52 @@ export default function StatusPage() {
                     <div className="w-4 h-4 bg-red-600 rounded-full border-4 border-white shadow-lg"></div>
                   </div>
 
-                  <div className="ml-0 sm:ml-12 bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 hover:border-red-300 hover:shadow-xl transition-all duration-300 overflow-hidden">
+                  <div className="ml-0 sm:ml-12 bg-white rounded-lg border border-gray-200 hover:border-red-300 hover:shadow-md transition-all duration-200 overflow-hidden">
                     {/* Company Name Header - Very Prominent */}
                     {h.companyName && (
-                      <div className="bg-gradient-to-r from-red-600 to-red-500 p-4 sm:p-6 text-white relative overflow-hidden">
+                      <div className="bg-gradient-to-r from-red-600 to-red-500 px-4 py-3 sm:px-5 sm:py-4 text-white relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
                         <div className="relative z-10">
-                          <div className="flex items-center gap-3 mb-2">
-                            <Building2 className="h-6 w-6 sm:h-8 sm:w-8" />
-                            <h2 className="text-xl sm:text-3xl font-bold">{h.companyName}</h2>
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5">
+                              <Building2 className="h-5 w-5 sm:h-6 sm:w-6" />
+                            </div>
+                            <div className="space-y-0.5">
+                              {/* Role on top */}
+                              <div className="flex items-center gap-2 text-[11px] sm:text-xs uppercase tracking-[0.16em] text-red-100">
+                                <Briefcase className="h-3.5 w-3.5" />
+                                <span>{(h.updatedByRole || 'employer')}</span>
+                              </div>
+                              {/* Company name line */}
+                              <div className="flex items-center gap-1">
+                                <h2 className="text-sm sm:text-base font-semibold">
+                                  {h.companyName}{' '}
+                                  <span className="text-[11px] sm:text-xs font-normal text-red-100">
+                                    (Company)
+                                  </span>
+                                </h2>
+                              </div>
+                              {/* HR name line */}
+                              {h.updatedByName && (
+                                <div className="flex items-center gap-1 text-[11px] sm:text-xs text-red-50">
+                                  <User className="h-3.5 w-3.5" />
+                                  <span>
+                                    {h.updatedByName}{' '}
+                                    <span className="font-normal text-red-100">(HR)</span>
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          {/* Employer Position - Prominently Displayed */}
-                          {h.updatedByRole && (
-                            <div className="flex items-center gap-2 mt-2 text-red-50">
-                              <Briefcase className="h-4 w-4" />
-                              <span className="text-sm sm:text-base font-semibold">{h.updatedByRole}</span>
-                            </div>
-                          )}
-                          {h.updatedByName && (
-                            <div className="flex items-center gap-2 mt-1 text-red-100">
-                              <User className="h-3 w-3 sm:h-4 sm:w-4" />
-                              <span className="text-xs sm:text-sm">{h.updatedByName}</span>
-                            </div>
-                          )}
                         </div>
                       </div>
                     )}
 
-                    <div className="p-4 sm:p-6">
+                    <div className="p-4 sm:p-5">
                       {/* Status Badge */}
                       {h.status && (
-                        <div className="mb-4">
-                          <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border-2 ${getStatusColor(h.status)}`}>
+                        <div className="mb-3">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border ${getStatusColor(h.status)}`}>
                             <CheckCircle2 className="h-4 w-4" />
                             <span className="capitalize">{h.status}</span>
                           </span>
@@ -190,21 +208,21 @@ export default function StatusPage() {
                       )}
 
                       {/* Point Number and Date */}
-                      <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-3 pb-3 border-b border-gray-200">
                         <div className="flex items-center gap-2">
-                          <div className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs sm:text-sm font-bold">
+                          <div className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold">
                             Red-Flagged {h.points ?? idx + 1}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Clock className="h-4 w-4" />
-                          <span className="text-xs sm:text-sm">{h.date ? new Date(h.date).toLocaleString() : ''}</span>
+                        <div className="flex items-center gap-1.5 text-gray-600 text-[11px] sm:text-xs">
+                          <Clock className="h-3.5 w-3.5" />
+                          <span>{h.date ? new Date(h.date).toLocaleString() : ''}</span>
                         </div>
                       </div>
 
                       {/* Notes */}
                       {h.notes && (
-                        <div className="mb-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
+                        <div className="mb-3 p-3 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
                           <div className="flex items-start gap-2">
                             <FileText className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
                             <p className="text-sm text-gray-800">{h.notes}</p>
@@ -214,7 +232,7 @@ export default function StatusPage() {
 
                       {/* Updated Fields Grid */}
                       {(h.presentCompany || h.designation || h.workLocation || h.currentCtc || h.expectedHikePercentage || h.noticePeriod || h.negotiableDays || (Array.isArray(h.skillSets) && h.skillSets.length) || h.verificationNotes) && (
-                        <div className="mb-4">
+                        <div className="mb-3">
                           <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                             <Activity className="h-4 w-4 text-red-600" />
                             Updated Information
@@ -312,21 +330,21 @@ export default function StatusPage() {
                       )}
 
                       {/* Comments Section */}
-                      <div className="mt-4 pt-4 border-t-2 border-gray-200">
-                        <div className="flex items-center text-sm font-semibold text-gray-800 mb-3">
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <div className="flex items-center text-xs sm:text-sm font-semibold text-gray-800 mb-2">
                           <MessageSquare className="h-4 w-4 mr-2 text-red-600" />
                           Your Red-Flagged Justification
                         </div>
                         {Array.isArray(h.comments) && h.comments.length > 0 ? (
-                          <div className="space-y-3 mb-4">
+                          <div className="space-y-2 mb-3">
                             {h.comments.map((c: any) => {
                               const authorId = (c?.createdBy?._id || c?.createdBy || '').toString()
                               const canDelete = (profile?.id || '').toString() === authorId
                               return (
                                 <div key={c._id || `${authorId}-${c.createdAt}`} className="flex items-start justify-between bg-gradient-to-r from-gray-50 to-white rounded-lg p-3 border border-gray-200 hover:border-red-200 transition-colors">
-                                  <div className="text-sm text-gray-800 flex-1">
+                                  <div className="text-xs sm:text-sm text-gray-800 flex-1">
                                     <div className="whitespace-pre-wrap break-words mb-1">{c.text}</div>
-                                    <div className="text-xs text-gray-500 flex items-center gap-1">
+                                    <div className="text-[11px] text-gray-500 flex items-center gap-1">
                                       <Clock className="h-3 w-3" />
                                       {c.createdAt ? new Date(c.createdAt).toLocaleString() : ''}
                                     </div>
@@ -348,26 +366,26 @@ export default function StatusPage() {
                           <div className="text-sm text-gray-500 mb-4 italic">No justification yet. Add your justification!</div>
                         )}
 
-                        <div className="flex items-start gap-2">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-2">
                           <input
                             type="text"
                             value={commentInputs[h._id] || ''}
                             onChange={(e) => setCommentInputs(prev => ({ ...prev, [h._id]: e.target.value }))}
                             placeholder="Add your Red-Flagged justification..."
-                            className="flex-1 rounded-lg border-2 border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+                            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
                             onKeyPress={(e) => {
                               if (e.key === 'Enter' && !commentSubmitting[h._id] && commentInputs[h._id]?.trim()) {
                                 handleAddComment(h._id)
                               }
                             }}
                           />
-                          <button
-                            onClick={() => handleAddComment(h._id)}
-                            disabled={!!commentSubmitting[h._id] || !(commentInputs[h._id]?.trim())}
-                            className={`px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all shadow-md hover:shadow-lg ${commentSubmitting[h._id] ? 'bg-red-400 cursor-not-allowed' : 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600'}`}
-                          >
-                            {commentSubmitting[h._id] ? 'Posting...' : 'Red-Flagged Justify'}
-                          </button>
+                        <button
+                          onClick={() => handleAddComment(h._id)}
+                          disabled={!!commentSubmitting[h._id] || !(commentInputs[h._id]?.trim())}
+                          className={`w-full sm:w-auto px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold text-white transition-all shadow-sm hover:shadow ${commentSubmitting[h._id] ? 'bg-red-400 cursor-not-allowed' : 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600'}`}
+                        >
+                          {commentSubmitting[h._id] ? 'Posting...' : 'Red-Flagged Justify'}
+                        </button>
                         </div>
                         {commentErrors[h._id] && (
                           <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">{commentErrors[h._id]}</div>

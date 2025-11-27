@@ -35,39 +35,6 @@ const SECTOR_OPTIONS = [
   { value: 'other', label: 'Other' }
 ]
 
-const SKILLS_OPTIONS = [
-  { value: 'javascript', label: 'JavaScript' },
-  { value: 'python', label: 'Python' },
-  { value: 'java', label: 'Java' },
-  { value: 'react', label: 'React' },
-  { value: 'angular', label: 'Angular' },
-  { value: 'vue', label: 'Vue.js' },
-  { value: 'nodejs', label: 'Node.js' },
-  { value: 'php', label: 'PHP' },
-  { value: 'csharp', label: 'C#' },
-  { value: 'cpp', label: 'C++' },
-  { value: 'sql', label: 'SQL' },
-  { value: 'mongodb', label: 'MongoDB' },
-  { value: 'aws', label: 'AWS' },
-  { value: 'azure', label: 'Azure' },
-  { value: 'docker', label: 'Docker' },
-  { value: 'kubernetes', label: 'Kubernetes' },
-  { value: 'devops', label: 'DevOps' },
-  { value: 'machine-learning', label: 'Machine Learning' },
-  { value: 'data-analysis', label: 'Data Analysis' },
-  { value: 'project-management', label: 'Project Management' },
-  { value: 'sales', label: 'Sales' },
-  { value: 'marketing', label: 'Marketing' },
-  { value: 'hr', label: 'Human Resources' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'accounting', label: 'Accounting' },
-  { value: 'design', label: 'Design' },
-  { value: 'ui-ux', label: 'UI/UX Design' },
-  { value: 'content-writing', label: 'Content Writing' },
-  { value: 'digital-marketing', label: 'Digital Marketing' },
-  { value: 'other', label: 'Other' }
-]
-
 const QUALIFICATION_OPTIONS = [
   { value: 'high-school', label: 'High School' },
   { value: 'diploma', label: 'Diploma' },
@@ -99,6 +66,7 @@ export default function CandidateRegister() {
   const [isInvited, setIsInvited] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 3
+  const [skillInput, setSkillInput] = useState('')
 
   const [formData, setFormData] = useState({
     // Personal Information
@@ -336,13 +304,33 @@ export default function CandidateRegister() {
     }
   }
 
-  const handleSkillChange = (skill: string) => {
+  const handleAddSkill = () => {
+    const newSkill = skillInput.trim()
+    if (!newSkill) return
+    setFormData(prev => {
+      if (prev.skillSets.some(skill => skill.toLowerCase() === newSkill.toLowerCase())) {
+        return prev
+      }
+      return {
+        ...prev,
+        skillSets: [...prev.skillSets, newSkill]
+      }
+    })
+    setSkillInput('')
+  }
+
+  const handleRemoveSkill = (skillToRemove: string) => {
     setFormData(prev => ({
       ...prev,
-      skillSets: prev.skillSets.includes(skill)
-        ? prev.skillSets.filter(s => s !== skill)
-        : [...prev.skillSets, skill]
+      skillSets: prev.skillSets.filter(skill => skill !== skillToRemove)
     }))
+  }
+
+  const handleSkillInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      handleAddSkill()
+    }
   }
 
   const renderStep1 = () => (
@@ -672,20 +660,46 @@ export default function CandidateRegister() {
 
       <div>
         <label className="block text-sm font-medium text-gray-700">Skill Sets *</label>
-        <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
-          {SKILLS_OPTIONS.map(skill => (
-            <label key={skill.value} className="flex items-center space-x-2 text-sm">
-              <input
-                type="checkbox"
-                checked={formData.skillSets.includes(skill.value)}
-                onChange={() => handleSkillChange(skill.value)}
-                className="rounded border-gray-300 text-red-600 focus:ring-red-500"
-              />
-              <span className="text-gray-700">{skill.label}</span>
-            </label>
-          ))}
+        <div className="mt-2 space-y-2">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={skillInput}
+              onChange={(e) => setSkillInput(e.target.value)}
+              onKeyDown={handleSkillInputKeyDown}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+              placeholder="Type a skill and press Enter"
+            />
+            <button
+              type="button"
+              onClick={handleAddSkill}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              Add
+            </button>
+          </div>
+          {formData.skillSets.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {formData.skillSets.map(skill => (
+                <span
+                  key={skill}
+                  className="inline-flex items-center gap-1 px-3 py-1 text-sm bg-red-50 text-red-700 border border-red-200 rounded-full"
+                >
+                  {skill}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSkill(skill)}
+                    className="text-red-600 hover:text-red-800"
+                    aria-label={`Remove ${skill}`}
+                  >
+                    &times;
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-        <p className="mt-1 text-xs text-gray-500">Select all applicable skills</p>
+        <p className="mt-1 text-xs text-gray-500">Add all applicable skills. Press Enter or click Add to include a skill.</p>
       </div>
     </div>
   )

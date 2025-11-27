@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Users, Search, Plus, User, Mail, Phone, Shield, CheckCircle, XCircle, Clock, X, FileText, Calendar, Briefcase, Building2, Eye, MapPin, DollarSign, TrendingUp, Edit, Save, MessageSquare, AlertCircle, Lock } from 'lucide-react'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.red-flagged.com'
 
 export default function CandidatesPage() {
   const [candidates, setCandidates] = useState<any[]>([])
@@ -562,7 +562,7 @@ export default function CandidatesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <div className="bg-gradient-to-r from-red-500 via-red-600 to-red-700 text-white rounded-2xl shadow-xl p-6 flex items-center justify-between border border-red-500/30">
           <div>
-            <p className="text-base sm:text-lg font-medium opacity-90 tracking-wide">Total Candidates</p>
+            <p className="text-base sm:text-lg font-medium opacity-90 tracking-wide">Red-Flagged</p>
             <p className="text-4xl sm:text-5xl font-extrabold mt-2 drop-shadow-sm">{stats.total}</p>
           </div>
           <div className="p-4 sm:p-5 bg-white/20 rounded-2xl backdrop-blur-sm border border-white/30">
@@ -693,9 +693,9 @@ export default function CandidatesPage() {
                        <h3 className="text-lg font-semibold text-gray-900">{getCandidateDisplayName(candidate)}</h3>
                        {isCandidateVerified(candidate) ? (
                          <>
-                           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                              <CheckCircle className="h-3 w-3" />
-                             Verified
+                             Red-Flag
                            </span>
                            {!canUpdateCandidate(candidate) && (
                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-300">
@@ -961,7 +961,7 @@ export default function CandidatesPage() {
                   {candidateDetails ? getCandidateDisplayName(candidateDetails) : 'Candidate Details'}
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  {isCandidateVerified(selectedCandidate) ? 'Verified Candidate' : 'Invited Candidate'}
+                  {isCandidateVerified(selectedCandidate) ? 'Red-Flag Candidate' : 'Invited Candidate'}
                 </p>
               </div>
               <button
@@ -1424,33 +1424,22 @@ export default function CandidatesPage() {
                         <div className="space-y-4">
                           {updateHistory.map((entry: any, idx: number) => (
                             <div key={idx} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">
-                                    Red-Flagged {entry.points ?? idx + 1}
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                  <span className="bg-red-100 text-red-700 px-3 py-1 rounded text-xs font-bold">
+                                    {entry.points ? `${entry.points}. Red-Flagged` : 'Red-Flagged'}
                                   </span>
-                                  {entry.companyName && (
-                                    <span className="text-sm font-semibold text-gray-900">{entry.companyName}</span>
-                                  )}
+                                  <div className="text-sm font-semibold text-gray-900">
+                                    Company - {entry.companyName || 'N/A'}
+                                  </div>
+                                  <div className="text-xs text-gray-600">
+                                    HR: {entry.updatedByName || '-'}
+                                    {entry.updatedByRole && ` (${entry.updatedByRole})`}
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-gray-500">
-                                    {entry.date ? new Date(entry.date).toLocaleString() : ''}
-                                  </span>
-                                  {canUpdateCandidate(selectedCandidate) && entry.updatedByRole === 'employer' && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleStartEditHistory(entry)}
-                                      className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                                    >
-                                      <Edit className="h-3 w-3" />
-                                      Edit
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="text-sm text-gray-600 mb-2">
-                                <span>By: {entry.updatedByName || '-'} ({entry.updatedByRole || '-'})</span>
+                                <span className="text-xs text-gray-500">
+                                  {entry.date ? new Date(entry.date).toLocaleString() : ''}
+                                </span>
                               </div>
                               {entry.notes && editingHistoryId !== (entry._id || entry.id) && (
                                 <div className="text-sm text-gray-800 mb-2 bg-blue-50 p-2 rounded border-l-4 border-blue-400">
@@ -1611,25 +1600,21 @@ export default function CandidatesPage() {
                               key={entry._id || idx}
                               className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                             >
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">
-                                    Red-Flagged {entry.points ?? idx + 1}
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                  <span className="bg-red-100 text-red-700 px-3 py-1 rounded text-xs font-bold">
+                                    {entry.points ? `${entry.points}. Red-Flagged` : 'Red-Flagged'}
                                   </span>
-                                  {entry.companyName && (
-                                    <span className="text-sm font-semibold text-gray-900">
-                                      {entry.companyName}
-                                    </span>
-                                  )}
+                                  <div className="text-sm font-semibold text-gray-900">
+                                    Company - {entry.companyName || 'N/A'}
+                                  </div>
+                                  <div className="text-xs text-gray-600">
+                                    HR: {entry.updatedByName || candidateDetails.employerName || '-'}
+                                    {entry.updatedByRole && ` (${entry.updatedByRole})`}
+                                  </div>
                                 </div>
                                 <span className="text-xs text-gray-500">
                                   {entry.date ? new Date(entry.date).toLocaleString() : ''}
-                                </span>
-                              </div>
-                              <div className="text-sm text-gray-600 mb-2">
-                                <span>
-                                  By: {entry.updatedByName || candidateDetails.employerName || '-'} (
-                                  {entry.updatedByRole || 'employer'})
                                 </span>
                               </div>
                               {entry.notes && (

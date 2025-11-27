@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import axios from 'axios'
-import { Briefcase, Clock, Activity, User } from 'lucide-react'
+import { Briefcase, Activity, User } from 'lucide-react'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.red-flagged.com'
 
@@ -58,7 +58,6 @@ export default function OverviewPage() {
 
   // Calculate stats
   const totalOffers = offers.length
-  const pendingCount = offers.filter(o => !o.joiningStatus || o.joiningStatus === 'pending').length
 
   return (
     <>
@@ -68,24 +67,15 @@ export default function OverviewPage() {
           <p className="text-sm sm:text-base text-gray-600 mt-1">View your profile and offers from employers</p>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Card - Total Red-Flagged */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
-          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-5 border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-5 border border-red-100 hover:shadow-md hover:border-red-200 transition-shadow">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-xs sm:text-sm text-gray-500">Total Offers</div>
-              <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
+              <div className="text-xs sm:text-sm text-red-600 font-semibold">Total Red-Flagged</div>
+              <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
             </div>
-            <div className="text-xl sm:text-2xl font-bold text-gray-900">{totalOffers}</div>
-            <p className="text-xs text-gray-500 mt-1">From employers</p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-5 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-xs sm:text-sm text-gray-500">Pending</div>
-              <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
-            </div>
-            <div className="text-xl sm:text-2xl font-bold text-yellow-600">{pendingCount}</div>
-            <p className="text-xs text-gray-500 mt-1">In progress</p>
+            <div className="text-xl sm:text-2xl font-extrabold text-red-600">{totalOffers}</div>
+            <p className="text-xs text-gray-500 mt-1">Total red-flagged records from employers</p>
           </div>
         </div>
 

@@ -67,108 +67,188 @@ export default function EmployerProfilePage() {
   }
 
   return (
-    <>
-      {/* Header */}
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Company Profile</h1>
-        <p className="text-sm sm:text-base text-gray-600 mt-1">View your company information</p>
-      </div>
-
-      {/* Profile Card */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sm:p-6 mb-6">
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Company Information</h2>
+    <div className="min-h-[80vh] bg-gradient-to-br from-red-50 via-white to-slate-50 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 sm:py-6">
+      <div className="max-w-5xl mx-auto">
+        {/* Premium Header */}
+        <div className="mb-6 sm:mb-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold mb-3">
+            <Shield className="h-3 w-3" />
+            Company Profile
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+            {profile?.companyName || 'Your Company'}
+          </h1>
+          <p className="text-sm sm:text-base text-slate-500 mt-2 max-w-2xl">
+            View your verified employer profile and key details used across the Red‑Flagged platform.
+          </p>
         </div>
 
-        <div className="space-y-4">
-          {/* Company Name */}
-          <div>
-            <label className="flex text-sm font-medium text-gray-700 mb-1 items-center gap-2">
-              <Building2 className="h-4 w-4 text-gray-500" />
-              Company Name
-            </label>
-            <p className="text-gray-900 font-medium">{profile?.companyName || '-'}</p>
-          </div>
+        {/* 2‑column premium layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          {/* Left: Highlight card */}
+          <div className="lg:col-span-1">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl border border-slate-800/60">
+              <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-red-500/30 blur-2xl" />
+              <div className="absolute -left-16 bottom-0 h-40 w-40 rounded-full bg-emerald-500/20 blur-3xl" />
+              <div className="relative p-6 sm:p-7 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-11 w-11 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center">
+                    <Building2 className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.15em] text-slate-300">Company</p>
+                    <p className="text-lg font-semibold truncate max-w-[14rem]">
+                      {profile?.companyName || 'Not set'}
+                    </p>
+                  </div>
+                </div>
 
-          {/* Address */}
-          <div>
-            <label className="flex text-sm font-medium text-gray-700 mb-1 items-center gap-2">
-              <MapPin className="h-4 w-4 text-gray-500" />
-              Address
-            </label>
-            <p className="text-gray-900">{profile?.address || '-'}</p>
-          </div>
+                <div className="grid grid-cols-1 gap-3 text-xs sm:text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-slate-300">PAN Number</span>
+                    <span className="font-semibold text-slate-50">
+                      {profile?.panNumber || '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-slate-300">HR Name</span>
+                    <span className="font-medium text-slate-50 truncate max-w-[10rem]">
+                      {profile?.hrName || '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-slate-300">Contact</span>
+                    <span className="font-medium text-slate-50">
+                      {profile?.contactNumber || '—'}
+                    </span>
+                  </div>
+                </div>
 
-          {/* PAN Number */}
-          <div>
-            <label className="flex text-sm font-medium text-gray-700 mb-1 items-center gap-2">
-              <CreditCard className="h-4 w-4 text-gray-500" />
-              PAN Number
-            </label>
-            <p className="text-gray-900 font-medium">{profile?.panNumber || '-'}</p>
-          </div>
-
-          {/* HR Name */}
-          <div>
-            <label className="flex text-sm font-medium text-gray-700 mb-1 items-center gap-2">
-              <User className="h-4 w-4 text-gray-500" />
-              HR Name
-            </label>
-            <p className="text-gray-900 font-medium">{profile?.hrName || '-'}</p>
-          </div>
-
-          {/* Designation */}
-          <div>
-            <label className="flex text-sm font-medium text-gray-700 mb-1 items-center gap-2">
-              <Briefcase className="h-4 w-4 text-gray-500" />
-              Designation
-            </label>
-            <p className="text-gray-900 font-medium">{profile?.designation || '-'}</p>
-          </div>
-
-          {/* Contact Number */}
-          <div>
-            <label className="flex text-sm font-medium text-gray-700 mb-1 items-center gap-2">
-              <Phone className="h-4 w-4 text-gray-500" />
-              Contact Number
-            </label>
-            <p className="text-gray-900 font-medium">{profile?.contactNumber || '-'}</p>
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="flex text-sm font-medium text-gray-700 mb-1 items-center gap-2">
-              <Mail className="h-4 w-4 text-gray-500" />
-              Email
-            </label>
-            <div className="flex items-center gap-2">
-              <p className="text-gray-900 font-medium">{profile?.email || '-'}</p>
-              {profile?.emailVerified && (
-                <span className="text-xs text-green-600 flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3" />
-                  Verified
-                </span>
-              )}
+                {profile?.status && (
+                  <div className="pt-1 border-t border-white/10 mt-2">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400 mb-2">
+                      Account Status
+                    </p>
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
+                        profile.status
+                      )}`}
+                    >
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 mr-1.5" />
+                      {profile.status.charAt(0).toUpperCase() + profile.status.slice(1)}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Status */}
-          {profile?.status && (
-            <div>
-              <label className="flex text-sm font-medium text-gray-700 mb-1 items-center gap-2">
-                <Shield className="h-4 w-4 text-gray-500" />
-                Account Status
-              </label>
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border-2 ${getStatusColor(profile.status)}`}>
-                {profile.status.charAt(0).toUpperCase() + profile.status.slice(1)}
-              </span>
-            </div>
-          )}
+          {/* Right: Detailed information */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-slate-100 p-5 sm:p-6">
+              <h2 className="text-sm font-semibold text-slate-900 tracking-wide mb-4">
+                Company Information
+              </h2>
 
-        
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {/* Company Name */}
+                <div>
+                  <p className="flex items-center text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 mb-1 gap-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-slate-400" />
+                    Company Name
+                  </p>
+                  <p className="text-sm sm:text-base font-medium text-slate-900">
+                    {profile?.companyName || '—'}
+                  </p>
+                </div>
+
+                {/* PAN Number */}
+                <div>
+                  <p className="flex items-center text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 mb-1 gap-1.5">
+                    <CreditCard className="h-3.5 w-3.5 text-slate-400" />
+                    PAN Number
+                  </p>
+                  <p className="text-sm sm:text-base font-medium text-slate-900">
+                    {profile?.panNumber || '—'}
+                  </p>
+                </div>
+
+                {/* HR Name */}
+                <div>
+                  <p className="flex items-center text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 mb-1 gap-1.5">
+                    <User className="h-3.5 w-3.5 text-slate-400" />
+                    HR Name
+                  </p>
+                  <p className="text-sm sm:text-base font-medium text-slate-900">
+                    {profile?.hrName || '—'}
+                  </p>
+                </div>
+
+                {/* Designation */}
+                <div>
+                  <p className="flex items-center text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 mb-1 gap-1.5">
+                    <Briefcase className="h-3.5 w-3.5 text-slate-400" />
+                    Designation
+                  </p>
+                  <p className="text-sm sm:text-base font-medium text-slate-900">
+                    {profile?.designation || '—'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Address full width */}
+              <div className="mt-5">
+                <p className="flex items-center text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 mb-1 gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                  Registered Address
+                </p>
+                <p className="text-sm sm:text-base text-slate-900">
+                  {profile?.address || '—'}
+                </p>
+              </div>
+            </div>
+
+            {/* Contact & security section */}
+            <div className="bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-slate-100 p-5 sm:p-6">
+              <h2 className="text-sm font-semibold text-slate-900 tracking-wide mb-4">
+                Contact &amp; Security
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {/* Contact Number */}
+                <div>
+                  <p className="flex items-center text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 mb-1 gap-1.5">
+                    <Phone className="h-3.5 w-3.5 text-slate-400" />
+                    Contact Number
+                  </p>
+                  <p className="text-sm sm:text-base font-medium text-slate-900">
+                    {profile?.contactNumber || '—'}
+                  </p>
+                </div>
+
+                {/* Email */}
+                <div>
+                  <p className="flex items-center text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 mb-1 gap-1.5">
+                    <Mail className="h-3.5 w-3.5 text-slate-400" />
+                    Email
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm sm:text-base font-medium text-slate-900 break-all">
+                      {profile?.email || '—'}
+                    </p>
+                    {profile?.emailVerified && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 border border-emerald-100">
+                        <CheckCircle className="h-3 w-3" />
+                        Verified
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }
 

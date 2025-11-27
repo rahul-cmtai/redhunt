@@ -19,7 +19,6 @@ export default function AdminOverviewPage() {
   const [dashboardStats, setDashboardStats] = useState<DashboardStat[]>([
     { title: 'Total Employers', value: '0', icon: Users, color: 'blue', change: '+0%' },
     { title: 'Total Candidates', value: '0', icon: UserCheck, color: 'green', change: '+0%' },
-    { title: 'Verified Records', value: '0', icon: Shield, color: 'purple', change: '+0%' },
     { title: 'Pending Verifications', value: '0', icon: Clock, color: 'yellow', change: '+0%' }
   ])
   const [loading, setLoading] = useState(false)
@@ -79,6 +78,10 @@ export default function AdminOverviewPage() {
           ? candidateUsers.filter((u: any) => normalizeStatus(u.status) === 'pending').length
           : 0
 
+        const totalCandidatesFallback =
+          (Array.isArray(candidates) ? candidates.length : 0) +
+          (Array.isArray(candidateUsers) ? candidateUsers.length : 0)
+
         setDashboardStats([
           { 
             title: 'Total Employers', 
@@ -89,17 +92,11 @@ export default function AdminOverviewPage() {
           },
           { 
             title: 'Total Candidates', 
-            value: metrics?.totalCandidates?.toString() || (Array.isArray(candidates) ? candidates.length.toString() : '0'), 
+            // Always show combined total: invited candidates + candidate users
+            value: totalCandidatesFallback.toString(), 
             icon: UserCheck, 
             color: 'green', 
             change: metrics?.candidateGrowth || '+0%' 
-          },
-          { 
-            title: 'Verified Records', 
-            value: metrics?.verifiedRecords?.toString() || verifiedUsers.toString(), 
-            icon: Shield, 
-            color: 'purple', 
-            change: metrics?.verificationGrowth || '+0%' 
           },
           { 
             title: 'Pending Verifications', 
@@ -135,7 +132,7 @@ export default function AdminOverviewPage() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
         {dashboardStats.map((stat, index) => {
           const Icon = stat.icon
           return (

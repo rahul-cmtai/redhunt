@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { FileText, Building2, User, Calendar, Clock, MessageSquare, Search, Filter, Sparkles, Activity, Briefcase, ChevronDown, ChevronUp } from 'lucide-react'
+import { FileText, Building2, User, Calendar, Clock, MessageSquare, Search, Sparkles, Activity, Briefcase, ChevronDown, ChevronUp } from 'lucide-react'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.red-flagged.com'
 
@@ -10,7 +10,6 @@ export default function RemarksPage() {
   const [allRemarks, setAllRemarks] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterByRole, setFilterByRole] = useState<'all' | 'employer' | 'admin'>('all')
   const [expandedRemarks, setExpandedRemarks] = useState<Record<string, boolean>>({})
 
   const getToken = () => localStorage.getItem('employerToken') || sessionStorage.getItem('employerToken')
@@ -73,6 +72,8 @@ export default function RemarksPage() {
             candidateName: candidate.name || candidate.fullName || 'Unknown',
             candidateEmail: candidate.email || candidate.primaryEmail || '',
             candidatePan: candidate.pan || candidate.panNumber || '',
+            candidateMobile: candidate.mobileNumber || candidate.phone || '',
+            candidateUan: candidate.uan || candidate.uanNumber || '',
             // Additional candidate details for profile display
             workExperience: candidate.workExperience,
             currentCtc: candidate.currentCtc,
@@ -136,19 +137,24 @@ export default function RemarksPage() {
     // Only show remarks for candidates that match the search
     let matchesSearch = true
     if (searchQuery) {
+      // Normalize mobile/UAN by stripping spaces and symbols
+      const normalizedQuery = searchLower.replace(/[\s\-()]/g, '')
+      const candidateMobile = (remark.candidateMobile || '').toLowerCase().replace(/[\s\-()]/g, '')
+      const candidateUan = (remark.candidateUan || '').toLowerCase().replace(/[\s\-()]/g, '')
+
       // Check if this remark belongs to a candidate that matches the search
+      // Only by: email, PAN, mobile number, or UAN number
       const candidateMatches = 
-        (remark.candidateName || '').toLowerCase().includes(searchLower) ||
         (remark.candidateEmail || '').toLowerCase().includes(searchLower) ||
-        (remark.candidatePan || '').toLowerCase().includes(searchLower)
+        (remark.candidatePan || '').toLowerCase().includes(searchLower) ||
+        candidateMobile.includes(normalizedQuery) ||
+        candidateUan.includes(normalizedQuery)
       
       // Only include if candidate matches (not notes or company name)
       matchesSearch = candidateMatches
     }
     
-    const matchesFilter = filterByRole === 'all' || remark.updatedByRole === filterByRole
-    
-    return matchesSearch && matchesFilter
+    return matchesSearch
   })
   
   // Group remarks by candidate for better organization
@@ -201,49 +207,17 @@ export default function RemarksPage() {
         </div>
       </div>
 
-      {/* Search and Filter */}
+      {/* Search */}
       <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by candidate name, email, PAN, or notes..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-400" />
-            <select
-              value={filterByRole}
-              onChange={(e) => setFilterByRole(e.target.value as 'all' | 'employer' | 'admin')}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-            >
-              <option value="all">All Roles</option>
-              <option value="employer">Employer</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-          <div className="text-xs text-gray-500 font-medium mb-1">Total Red-Flagged</div>
-          <div className="text-2xl font-bold text-gray-900">{allRemarks.length}</div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-          <div className="text-xs text-gray-500 font-medium mb-1">Filtered Results</div>
-          <div className="text-2xl font-bold text-red-600">{filteredRemarks.length}</div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-          <div className="text-xs text-gray-500 font-medium mb-1">By Employers</div>
-          <div className="text-2xl font-bold text-blue-600">
-            {allRemarks.filter(r => r.updatedByRole === 'employer').length}
-          </div>
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search Candidate"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+          />
         </div>
       </div>
 
@@ -321,27 +295,28 @@ export default function RemarksPage() {
                           }))}
                           className="w-full p-4 sm:p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
                         >
-                          <div className="flex items-center gap-4 flex-1">
-                            {/* Company Name */}
-                            {remark.companyName && (
-                              <div className="flex items-center gap-2">
-                                <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
-                                <span className="text-lg sm:text-xl font-bold text-gray-900">{remark.companyName}</span>
-                              </div>
-                            )}
-                            
-                            {/* Remark Number */}
-                            <div className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-bold">
-                              Red-Flagged {remark.points ?? idx + 1}
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1 text-left">
+                            {/* Remark Number first */}
+                            <div className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-bold inline-flex items-center gap-1">
+                              {remark.points ? `${remark.points}.` : '1.'} Red-Flagged
                             </div>
-                            
-                            {/* Updated By */}
+
+                            {/* Company info */}
+                            <div className="flex items-center gap-2 text-gray-900 font-semibold">
+                              <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
+                              <span>
+                                Company - {remark.companyName || 'N/A'}
+                              </span>
+                            </div>
+
+                            {/* HR info */}
                             <div className="text-sm text-gray-600">
-                              By: {remark.updatedByName || '-'} ({remark.updatedByRole || '-'})
+                              HR: {remark.updatedByName || '-'}
+                              {remark.updatedByRole && ` (${remark.updatedByRole})`}
                             </div>
-                            
+
                             {/* Date */}
-                            <div className="flex items-center gap-1 text-xs text-gray-500 ml-auto">
+                            <div className="flex items-center gap-1 text-xs text-gray-500 sm:ml-auto">
                               <Clock className="h-3 w-3" />
                               {remark.date ? new Date(remark.date).toLocaleDateString() : ''}
                             </div>
