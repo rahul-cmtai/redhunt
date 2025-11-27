@@ -50,8 +50,9 @@ export default function AdminCandidatesPage() {
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [employers, setEmployers] = useState<Employer[]>([])
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterStatus, setFilterStatus] = useState('all')
   const [filterEmployer, setFilterEmployer] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 10
   const [candidatesLoading, setCandidatesLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
@@ -189,6 +190,7 @@ export default function AdminCandidatesPage() {
       } else {
         fetchCandidates()
       }
+      setCurrentPage(1)
     }, 500)
 
     return () => clearTimeout(timeoutId)
@@ -200,17 +202,17 @@ export default function AdminCandidatesPage() {
                          candidate.uan?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          candidate.employerName?.toLowerCase().includes(searchQuery.toLowerCase())
     
-    const candidateStatus = candidate.joiningStatus || candidate.offerStatus || ''
-    const matchesStatus = filterStatus === 'all' || 
-                         (filterStatus === 'joined' && (candidateStatus === 'joined' || candidateStatus === 'Joined')) ||
-                         (filterStatus === 'not_joined' && (candidateStatus === 'not_joined' || candidateStatus === 'Not Joined')) ||
-                         (filterStatus === 'pending' && !candidateStatus)
-    
     const candidateEmployerId = candidate.employerId || candidate.employer?._id || candidate.employer?.id
     const matchesEmployer = filterEmployer === 'all' || candidateEmployerId === filterEmployer
     
-    return matchesSearch && matchesStatus && matchesEmployer
+    return matchesSearch && matchesEmployer
   })
+
+  const totalPages = Math.max(1, Math.ceil(filteredCandidates.length / pageSize))
+  const safeCurrentPage = Math.min(currentPage, totalPages)
+  const startIndex = (safeCurrentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedCandidates = filteredCandidates.slice(startIndex, endIndex)
 
   return (
     <>
@@ -237,21 +239,6 @@ export default function AdminCandidatesPage() {
           
           {/* Filters Row - Responsive Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {/* Status Filter */}
-            <div className="w-full">
-              <label className="block text-xs font-medium text-gray-700 mb-1.5 sm:hidden">Status</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-3 sm:px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm sm:text-base bg-white"
-              >
-                <option value="all">All Status</option>
-                <option value="joined">Joined</option>
-                <option value="not_joined">Not Joined</option>
-                <option value="pending">Pending</option>
-              </select>
-            </div>
-            
             {/* Employer Filter */}
             <div className="w-full">
               <label className="block text-xs font-medium text-gray-700 mb-1.5 sm:hidden">Employer</label>
@@ -274,7 +261,6 @@ export default function AdminCandidatesPage() {
               <button 
                 onClick={() => {
                   setSearchQuery('')
-                  setFilterStatus('all')
                   setFilterEmployer('all')
                 }}
                 className="w-full flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base font-medium text-gray-700"
@@ -287,6 +273,8 @@ export default function AdminCandidatesPage() {
           </div>
         </div>
       </div>
+
+    
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -309,14 +297,13 @@ export default function AdminCandidatesPage() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Candidate</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employer</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredCandidates.map((candidate) => (
+            {paginatedCandidates.map((candidate) => (
               <tr key={candidate._id || candidate.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
@@ -335,19 +322,6 @@ export default function AdminCandidatesPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {candidate.position || '-'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    candidate.joiningStatus === 'joined' || candidate.offerStatus === 'Joined'
-                      ? 'bg-green-100 text-green-800'
-                      : candidate.joiningStatus === 'not_joined' || candidate.offerStatus === 'Not Joined'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {candidate.joiningStatus === 'joined' ? 'Joined' :
-                     candidate.joiningStatus === 'not_joined' ? 'Not Joined' :
-                     candidate.offerStatus || 'Pending'}
-                  </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {candidate.employerName || 'Unknown'}
@@ -377,7 +351,7 @@ export default function AdminCandidatesPage() {
 
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-4">
-        {filteredCandidates.map((candidate) => (
+        {paginatedCandidates.map((candidate) => (
           <div key={candidate._id || candidate.id} className="bg-white rounded-lg shadow-sm p-4">
             <div className="flex items-start space-x-3 mb-3">
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -442,7 +416,43 @@ export default function AdminCandidatesPage() {
         )}
       </div>
 
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Pagination Controls */}
+      {filteredCandidates.length > pageSize && (
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-600">
+          <div>
+            Showing{' '}
+            <span className="font-medium">
+              {startIndex + 1}–{Math.min(endIndex, filteredCandidates.length)}
+            </span>{' '}
+            of <span className="font-medium">{filteredCandidates.length}</span> candidates
+          </div>
+          <div className="inline-flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={safeCurrentPage === 1}
+              className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              Previous
+            </button>
+            <span className="text-xs sm:text-sm">
+              Page <span className="font-medium">{safeCurrentPage}</span> of{' '}
+              <span className="font-medium">{totalPages}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safeCurrentPage === totalPages}
+              className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )
+      }
+
+      {/* <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg shadow-sm">
           <div className="text-2xl font-bold text-gray-900">{filteredCandidates.length}</div>
           <div className="text-sm text-gray-600">
@@ -470,7 +480,7 @@ export default function AdminCandidatesPage() {
           </div>
           <div className="text-sm text-gray-600">Pending</div>
         </div>
-      </div>
+      </div> */}
 
       {/* Candidate View Modal */}
       {isCandidateViewOpen && selectedCandidate && (

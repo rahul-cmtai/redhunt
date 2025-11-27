@@ -64,6 +64,8 @@ export default function AdminCandidateUsersPage() {
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null)
   const [selectedCandidateUser, setSelectedCandidateUser] = useState<CandidateUser | null>(null)
   const [showCandidateUserModal, setShowCandidateUserModal] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 10
 
   const getToken = () => localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken')
 
@@ -79,6 +81,7 @@ export default function AdminCandidateUsersPage() {
         headers: { Authorization: `Bearer ${token}` }
       })
       setCandidateUsers(data || [])
+      setCurrentPage(1)
     } catch (err: any) {
       if (err.response?.status === 401) {
         setError('Session expired. Please login again.')
@@ -178,6 +181,12 @@ export default function AdminCandidateUsersPage() {
     fetchCandidateUsers()
   }, [])
 
+  const totalPages = Math.max(1, Math.ceil(candidateUsers.length / pageSize))
+  const safeCurrentPage = Math.min(currentPage, totalPages)
+  const startIndex = (safeCurrentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedCandidateUsers = candidateUsers.slice(startIndex, endIndex)
+
   return (
     <>
       <div className="mb-6 sm:mb-8">
@@ -212,7 +221,7 @@ export default function AdminCandidateUsersPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {candidateUsers.map((u) => {
+          {paginatedCandidateUsers.map((u) => {
               const displayName = u.name || (u as any).fullName || (u as any).candidateName || (u.primaryEmail || u.email)?.split('@')[0] || '-'
               return (
                 <tr key={u._id || u.id} className="hover:bg-gray-50">
@@ -306,7 +315,7 @@ export default function AdminCandidateUsersPage() {
 
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-4">
-        {candidateUsers.map((u) => {
+        {paginatedCandidateUsers.map((u) => {
           const displayName = u.name || (u as any).fullName || (u as any).candidateName || (u.primaryEmail || u.email)?.split('@')[0] || '-'
           return (
             <div key={u._id || u.id} className="bg-white rounded-lg shadow-sm p-4">
@@ -394,6 +403,41 @@ export default function AdminCandidateUsersPage() {
 
       {candidateUsers.length === 0 && !candidateUsersLoading && (
         <div className="text-center py-8 text-gray-500">No candidate users found</div>
+      )}
+
+      {/* Pagination Controls */}
+      {candidateUsers.length > pageSize && (
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-600">
+          <div>
+            Showing{' '}
+            <span className="font-medium">
+              {startIndex + 1}–{Math.min(endIndex, candidateUsers.length)}
+            </span>{' '}
+            of <span className="font-medium">{candidateUsers.length}</span> candidate users
+          </div>
+          <div className="inline-flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={safeCurrentPage === 1}
+              className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              Previous
+            </button>
+            <span className="text-xs sm:text-sm">
+              Page <span className="font-medium">{safeCurrentPage}</span> of{' '}
+              <span className="font-medium">{totalPages}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safeCurrentPage === totalPages}
+              className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Candidate User Details Modal */}
