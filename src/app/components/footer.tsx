@@ -61,17 +61,14 @@ export default function Footer() {
             <div>
               <h4 className="text-lg font-semibold mb-6">Contact</h4>
               <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <Phone className="h-5 w-5 text-red-400" />
-                  <span className="text-gray-300">+1 (555) 123-4567</span>
-                </div>
+               
                 <div className="flex items-center space-x-3">
                   <Mail className="h-5 w-5 text-red-400" />
                   <span className="text-gray-300">support@red-flagged.com</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <MapPin className="h-5 w-5 text-red-400" />
-                  <span className="text-gray-300">San Francisco, CA</span>
+                  <span className="text-gray-300">Delhi</span>
                 </div>
               </div>
             </div>
@@ -83,9 +80,15 @@ export default function Footer() {
                 © 2025 Red-Flagged Technologies Pvt. Ltd. All rights reserved.
               </div>
               <div className="flex space-x-6 mt-4 md:mt-0">
-                <Link href="#privacy" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</Link>
-                <Link href="#terms" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</Link>
-                <Link href="#cookies" className="text-gray-400 hover:text-white text-sm transition-colors">Cookie Policy</Link>
+                <Link href="/privacy-policy" className="text-gray-400 hover:text-white text-sm transition-colors">
+                  Privacy Policy
+                </Link>
+                <Link href="/terms-of-service" className="text-gray-400 hover:text-white text-sm transition-colors">
+                  Terms of Service
+                </Link>
+                <Link href="/cookie-policy" className="text-gray-400 hover:text-white text-sm transition-colors">
+                  Cookie Policy
+                </Link>
               </div>
             </div>
             <div className="mt-4 text-center">

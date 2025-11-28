@@ -90,7 +90,7 @@ export default function Hero() {
               transition={{ delay: 0.2 }}
             >
               <Globe className="w-4 h-4" />
-              <span>Trusted by 100+ Companies Worldwide</span>
+              <span>Trusted by 200+ Companies Worldwide</span>
             </motion.div>
 
             {/* Main Heading */}

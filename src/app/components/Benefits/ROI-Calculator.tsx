@@ -12,7 +12,7 @@ export default function ROICalculator() {
 
   const stats = [
     {
-      value: '$25K+',
+      value: '$5k+',
       label: 'Average Annual Savings',
       sublabel: 'Based on 100 hires per year',
       color: 'text-brand',

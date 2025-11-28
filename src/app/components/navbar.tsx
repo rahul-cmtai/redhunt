@@ -33,7 +33,7 @@ export default function Navbar() {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
-                <h1 className="text-2xl font-bold text-brand">Red-Flagged</h1>
+                <img src="/logo.png" alt="Red-Flagged Logo" className="h-14 w-auto" />
               </Link>
             </div>
           </div>
