@@ -149,7 +149,7 @@ export default function HeroSection() {
         >
           {[
             { icon: Users, text: '200+ Companies', subtext: 'Trust Red-Flagged' },
-            { icon: Shield, text: '10,000+ Profiles', subtext: 'Verified Daily' },
+            { icon: Shield, text: '100+ Profiles', subtext: 'Verified Daily' },
             { icon: CheckCircle, text: '99.9% Accuracy', subtext: 'Reliable Data' }
           ].map((item, index) => (
             <motion.div 
