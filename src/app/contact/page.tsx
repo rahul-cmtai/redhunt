@@ -132,32 +132,7 @@ export default function ContactUs() {
               </ul>
             </div>
 
-            {/* <div className="w-full bg-gradient-to-br from-blue-50 via-white to-white p-8 rounded-3xl shadow-lg border border-blue-100 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center">
-                  <Phone className="h-6 w-6 text-blue-600" />
-                </div>
-                <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wide bg-white rounded-full text-blue-600 border border-blue-200">
-                  Priority Line
-                </span>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Call Us</h3>
-              <p className="text-gray-600 text-sm mb-5">
-                Speak directly with a Red-Flagged specialist for onboarding help, success planning, or urgent escalation.
-              </p>
-              <Link
-                href="tel:+1-800-555-0199"
-                className="inline-flex items-center gap-2 text-blue-600 font-semibold text-base hover:text-blue-700"
-              >
-                +1 (800) 555-0199
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <ul className="mt-6 space-y-2 text-sm text-gray-500">
-                <li>• Monday – Friday, 8 AM – 10 PM IST</li>
-                <li>• Weekend emergency support for enterprise</li>
-                <li>• Direct line to candidate verification desk</li>
-              </ul>
-            </div> */}
+         
           </div>
 
           {/* Main Contact Form */}
@@ -249,19 +224,16 @@ export default function ContactUs() {
                   <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
                     Subject *
                   </label>
-                  <select
+                  <input
+                    type="text"
                     id="subject"
                     name="subject"
                     required
                     value={formData.subject}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand transition-all"
-                  >
-                    <option value="">Select a subject</option>
-                    <option value="pricing">Pricing Inquiry</option>
-                    <option value="partnership">Partnership Opportunity</option>
-                    <option value="other">Other</option>
-                  </select>
+                    placeholder="Enter your subject"
+                  />
                 </div>
 
                 <div>
@@ -299,68 +271,6 @@ export default function ContactUs() {
                 </button>
               </form>
             </div>
-
-            {/* Additional Info */}
-            {/* <div className="space-y-8">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-6">Get Quick Answers</h2>
-                <p className="text-gray-600 mb-8">
-                  Looking for immediate help? Check out our resources or reach out to our support team.
-                </p>
-
-                <div className="space-y-6">
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                    <div className="w-10 h-10 bg-brand-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Clock className="h-5 w-5 text-brand" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-1">Business Hours</h3>
-                      <p className="text-sm text-gray-600">
-                        Monday - Friday: 9:00 AM - 6:00 PM EST<br />
-                        Saturday - Sunday: Closed
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Globe className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-1">Global Support</h3>
-                      <p className="text-sm text-gray-600">
-                        We provide support in multiple languages and time zones for our global clients.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <MessageSquare className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-1">Response Time</h3>
-                      <p className="text-sm text-gray-600">
-                        We typically respond to all inquiries within 24 hours during business days.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-brand to-brand-700 rounded-2xl p-8 text-white">
-                <h3 className="text-2xl font-bold mb-4">Need Immediate Help?</h3>
-                <p className="text-brand-100 mb-6">
-                  Schedule a call with our team to discuss your specific needs and get a personalized demo.
-                </p>
-                <Link 
-                  href="/demo" 
-                  className="inline-flex items-center justify-center w-full bg-white text-brand px-6 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-                >
-                  Schedule a Demo
-                </Link>
-              </div>
-            </div> */}
           </div>
         </div>
       </section>

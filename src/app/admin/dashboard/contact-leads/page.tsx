@@ -28,7 +28,7 @@ type ContactLead = {
   email: string
   company?: string
   phone?: string
-  subject: 'pricing' | 'partnership' | 'other'
+  subject: string
   message: string
   status: 'new' | 'read' | 'replied' | 'archived'
   adminNotes?: string
