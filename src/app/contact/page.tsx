@@ -104,7 +104,7 @@ export default function ContactUs() {
       {/* Contact Info Cards */}
       <section className="py-20 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-8 mb-16">
+          <div className="grid md:grid-cols-1 gap-8 mb-16">
             <div className="w-full bg-gradient-to-br from-brand-50 via-white to-white p-8 rounded-3xl shadow-lg border border-brand/10 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-14 h-14 bg-brand-100 rounded-2xl flex items-center justify-center">
@@ -132,7 +132,7 @@ export default function ContactUs() {
               </ul>
             </div>
 
-            <div className="w-full bg-gradient-to-br from-blue-50 via-white to-white p-8 rounded-3xl shadow-lg border border-blue-100 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
+            {/* <div className="w-full bg-gradient-to-br from-blue-50 via-white to-white p-8 rounded-3xl shadow-lg border border-blue-100 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center">
                   <Phone className="h-6 w-6 text-blue-600" />
@@ -157,7 +157,7 @@ export default function ContactUs() {
                 <li>• Weekend emergency support for enterprise</li>
                 <li>• Direct line to candidate verification desk</li>
               </ul>
-            </div>
+            </div> */}
           </div>
 
           {/* Main Contact Form */}
@@ -378,22 +378,19 @@ export default function ContactUs() {
           <div className="space-y-4">
             <details className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all cursor-pointer">
               <summary className="font-semibold text-gray-900 text-lg">
-                How does Red-Flagged verify candidate information?
+                How does Red-Flagged help prevent no-shows and offer-hoarders?
               </summary>
               <p className="mt-4 text-gray-600 leading-relaxed">
-                Red-Flagged uses a network of verified employers who share candidate data in our secure platform. 
-                When you search for a candidate, we cross-reference our database to provide you with their 
-                verified employment history, offer acceptance records, and joining patterns.
+                Red-Flagged maintains a shared database across verified employers that tracks candidates who accept job offers but fail to join. When you search for a candidate, we cross-reference our database to show you their history of offer acceptances, no-show patterns, and joining behavior. This helps you identify potential risks before making a hiring decision and avoid candidates with a history of not showing up after accepting offers.
               </p>
             </details>
 
             <details className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all cursor-pointer">
               <summary className="font-semibold text-gray-900 text-lg">
-                What is the pricing structure?
+                What information does Red-Flagged track about candidates?
               </summary>
               <p className="mt-4 text-gray-600 leading-relaxed">
-                We offer flexible pricing based on your hiring volume and needs. Plans start at $299/month for 
-                up to 50 verifications. Contact our sales team for enterprise pricing and custom solutions.
+                Our platform tracks verified employment history, offer acceptance records, joining patterns, and any red-flagged incidents such as fraudulent activity, termination, or absconding. We also provide insights into candidates who have accepted offers but never joined, helping you make informed hiring decisions and reduce recruitment risks.
               </p>
             </details>
 
@@ -402,18 +399,34 @@ export default function ContactUs() {
                 Is candidate data secure and compliant?
               </summary>
               <p className="mt-4 text-gray-600 leading-relaxed">
-                Absolutely. We employ bank-level encryption, are GDPR and SOC2 compliant, and conduct regular 
-                security audits. All data is handled with the highest standards of privacy and security.
+                Absolutely. Red-Flagged is 100% secure and HIPAA compliant. We employ bank-level encryption, follow strict data privacy standards, and conduct regular security audits. All candidate data is handled with the highest standards of privacy and security, ensuring that sensitive information is protected at all times.
               </p>
             </details>
 
             <details className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all cursor-pointer">
               <summary className="font-semibold text-gray-900 text-lg">
-                Can I integrate Red-Flagged with my existing ATS?
+                How does the shared database work across companies?
               </summary>
               <p className="mt-4 text-gray-600 leading-relaxed">
-                Yes! Red-Flagged offers API integration with popular ATS platforms like Greenhouse, Lever, and Workday. 
-                Our team will help you set up seamless integration during onboarding.
+                Red-Flagged operates as a collaborative platform where verified employers contribute and access candidate verification data. When a company adds a candidate record (such as an offer acceptance or no-show), this information becomes part of our shared database. Other verified employers can then search and view this data to make informed hiring decisions, creating a transparent ecosystem that benefits all participating companies.
+              </p>
+            </details>
+
+            <details className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all cursor-pointer">
+              <summary className="font-semibold text-gray-900 text-lg">
+                What makes a candidate "red-flagged"?
+              </summary>
+              <p className="mt-4 text-gray-600 leading-relaxed">
+                A candidate is red-flagged when they have a history of concerning behavior such as accepting job offers but not joining, fraudulent activity, termination for cause, or absconding from previous positions. Our platform helps you identify these patterns proactively, allowing you to avoid risky hires and make better recruitment decisions based on verified historical data.
+              </p>
+            </details>
+
+            <details className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all cursor-pointer">
+              <summary className="font-semibold text-gray-900 text-lg">
+                How can I get started with Red-Flagged?
+              </summary>
+              <p className="mt-4 text-gray-600 leading-relaxed">
+                Getting started is easy! Simply register your company on our platform to become a verified employer. Once approved, you can start adding candidate records and searching our database for verification. Our team provides onboarding assistance to help you understand the platform and maximize its benefits. Contact us through the form above or email support@red-flagged.com to begin.
               </p>
             </details>
           </div>
