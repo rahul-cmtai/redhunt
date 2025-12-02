@@ -67,6 +67,8 @@ export default function CandidateRegister() {
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 3
   const [skillInput, setSkillInput] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [checkingDuplicates, setCheckingDuplicates] = useState<Record<string, boolean>>({})
 
   const [formData, setFormData] = useState({
     // Personal Information
@@ -115,6 +117,229 @@ export default function CandidateRegister() {
     }
   }, [])
 
+  // Check for duplicate email, mobile, PAN, UAN
+  const checkDuplicate = async (field: string, value: string) => {
+    if (!value || !value.trim()) return null
+    
+    setCheckingDuplicates(prev => ({ ...prev, [field]: true }))
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/auth/candidate/check-duplicate`,
+        { field, value: value.trim() },
+        { headers: { 'Content-Type': 'application/json' } }
+      )
+      if (response.data.exists) {
+        setFieldErrors(prev => ({
+          ...prev,
+          [field]: `${field === 'primaryEmail' ? 'Email' : field === 'mobileNumber' ? 'Mobile number' : field === 'panNumber' ? 'PAN' : 'UAN'} already exists. Please use a different one.`
+        }))
+        return true
+      } else {
+        setFieldErrors(prev => {
+          const newErrors = { ...prev }
+          delete newErrors[field]
+          return newErrors
+        })
+        return false
+      }
+    } catch (err: any) {
+      // If endpoint doesn't exist, skip duplicate check
+      console.log('Duplicate check endpoint not available')
+      return false
+    } finally {
+      setCheckingDuplicates(prev => ({ ...prev, [field]: false }))
+    }
+  }
+
+  // Real-time field validation
+  const validateField = (field: string, value: string) => {
+    const trimmedValue = value.trim()
+    let error = ''
+
+    switch (field) {
+      case 'firstName':
+        if (!trimmedValue) error = 'First name is required'
+        break
+      case 'lastName':
+        if (!trimmedValue) error = 'Last name is required'
+        break
+      case 'fathersName':
+        if (!trimmedValue) error = 'Father\'s name is required'
+        break
+      case 'gender':
+        if (!value) error = 'Gender is required'
+        break
+      case 'dob':
+        if (!value) {
+          error = 'Date of birth is required'
+        } else {
+          const dob = new Date(value)
+          const today = new Date()
+          const age = today.getFullYear() - dob.getFullYear()
+          if (age < 18) {
+            error = 'Not eligible under 18 years'
+          }
+        }
+        break
+      case 'permanentAddress':
+        if (!trimmedValue) error = 'Permanent address is required'
+        break
+      case 'currentAddress':
+        if (!trimmedValue) error = 'Current address is required'
+        break
+      case 'mobileNumber':
+        if (!trimmedValue) {
+          error = 'Mobile number is required'
+        } else if (!/^[0-9+\-()\s]{10,15}$/.test(trimmedValue)) {
+          error = 'Enter a valid mobile number (10-15 digits)'
+        }
+        break
+      case 'primaryEmail':
+        if (!trimmedValue) {
+          error = 'Primary email is required'
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedValue)) {
+          error = 'Enter a valid email address'
+        }
+        break
+      case 'secondaryEmail':
+        if (trimmedValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedValue)) {
+          error = 'Enter a valid email address'
+        }
+        break
+      case 'panNumber':
+        if (!trimmedValue) {
+          error = 'PAN number is required'
+        } else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i.test(trimmedValue)) {
+          error = 'Enter a valid PAN (e.g., ABCDE1234F)'
+        }
+        break
+      case 'uanNumber':
+        if (trimmedValue && !/^[0-9]{12}$/.test(trimmedValue)) {
+          error = 'Enter a valid UAN (12 digits)'
+        }
+        break
+      case 'highestQualification':
+        if (!value) error = 'Highest qualification is required'
+        break
+      case 'workExperience':
+        if (!trimmedValue) {
+          error = 'Work experience is required'
+        } else if (!/^[0-9]+(\.[0-9]+)?$/.test(trimmedValue)) {
+          error = 'Enter valid work experience in years'
+        } else if (parseFloat(trimmedValue) < 0 || parseFloat(trimmedValue) > 50) {
+          error = 'Work experience must be between 0 and 50 years'
+        }
+        break
+      case 'sector':
+        if (!value) error = 'Sector is required'
+        break
+      case 'presentCompany':
+        if (!trimmedValue) error = 'Present company is required'
+        break
+      case 'designation':
+        if (!trimmedValue) error = 'Designation is required'
+        break
+      case 'workLocation':
+        if (!trimmedValue) error = 'Work location is required'
+        break
+      case 'openToRelocation':
+        if (!value) error = 'Relocation preference is required'
+        break
+      case 'currentCtc':
+        if (!trimmedValue) error = 'Current CTC is required'
+        break
+      case 'expectedHikePercentage':
+        if (!trimmedValue) error = 'Expected hike percentage is required'
+        break
+      case 'noticePeriod':
+        if (!trimmedValue) {
+          error = 'Notice period is required'
+        } else if (!/^[0-9]+$/.test(trimmedValue)) {
+          error = 'Notice period must be a number'
+        } else if (parseInt(trimmedValue) < 0) {
+          error = 'Notice period cannot be negative'
+        }
+        break
+      case 'negotiableDays':
+        if (!trimmedValue) {
+          error = 'Negotiable days is required'
+        } else if (!/^[0-9]+$/.test(trimmedValue)) {
+          error = 'Negotiable days must be a number'
+        } else if (parseInt(trimmedValue) < 0) {
+          error = 'Negotiable days cannot be negative'
+        }
+        break
+      case 'password':
+        if (!value) {
+          error = 'Password is required'
+        } else if (value.length < 6) {
+          error = 'Password must be at least 6 characters'
+        }
+        break
+      case 'confirmPassword':
+        if (!value) {
+          error = 'Please confirm your password'
+        } else if (value !== formData.password) {
+          error = 'Passwords do not match'
+        }
+        break
+      case 'password':
+        break
+    }
+
+    if (error) {
+      setFieldErrors(prev => ({ ...prev, [field]: error }))
+    } else {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
+    }
+
+    return !error
+  }
+
+  // Handle field change with validation
+  const handleFieldChange = (field: string, value: string) => {
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value }
+      // If password changes, re-validate confirmPassword
+      if (field === 'password' && prev.confirmPassword) {
+        if (prev.confirmPassword !== value) {
+          setFieldErrors(prevErrors => ({ ...prevErrors, confirmPassword: 'Passwords do not match' }))
+        } else {
+          setFieldErrors(prevErrors => {
+            const newErrors = { ...prevErrors }
+            delete newErrors.confirmPassword
+            return newErrors
+          })
+        }
+      }
+      return newData
+    })
+    setError(null)
+    
+    // Validate immediately
+    validateField(field, value)
+  }
+
+  // Handle field blur with duplicate check
+  const handleFieldBlur = async (field: string, value: string) => {
+    validateField(field, value)
+    
+    // Check duplicates for specific fields
+    if (field === 'primaryEmail' && value.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+      await checkDuplicate('primaryEmail', value)
+    } else if (field === 'mobileNumber' && value.trim() && /^[0-9+\-()\s]{10,15}$/.test(value.trim())) {
+      await checkDuplicate('mobileNumber', value)
+    } else if (field === 'panNumber' && value.trim() && /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i.test(value.trim())) {
+      await checkDuplicate('panNumber', value)
+    } else if (field === 'uanNumber' && value.trim() && /^[0-9]{12}$/.test(value.trim())) {
+      await checkDuplicate('uanNumber', value)
+    }
+  }
+
   const validateStep1 = () => {
     if (!formData.firstName.trim()) return 'First name is required'
     if (!formData.lastName.trim()) return 'Last name is required'
@@ -159,17 +384,38 @@ export default function CandidateRegister() {
 
   const handleNext = () => {
     setError(null)
-    let validationError = null
     
+    // Validate all fields in current step
     if (currentStep === 1) {
-      validationError = validateStep1()
+      const fields = ['firstName', 'lastName', 'fathersName', 'gender', 'dob', 'permanentAddress', 'currentAddress', 'mobileNumber', 'primaryEmail', 'secondaryEmail']
+      let hasError = false
+      fields.forEach(field => {
+        const value = formData[field as keyof typeof formData] as string
+        if (!validateField(field, value || '')) {
+          hasError = true
+        }
+      })
+      if (hasError) {
+        setError('Please fix the errors in the form before proceeding')
+        return
+      }
     } else if (currentStep === 2) {
-      validationError = validateStep2()
-    }
-    
-    if (validationError) {
-      setError(validationError)
-      return
+      const fields = ['panNumber', 'uanNumber', 'highestQualification', 'workExperience', 'sector', 'presentCompany', 'designation', 'workLocation', 'openToRelocation', 'currentCtc', 'expectedHikePercentage', 'noticePeriod', 'negotiableDays']
+      let hasError = false
+      fields.forEach(field => {
+        const value = formData[field as keyof typeof formData] as string
+        if (!validateField(field, value || '')) {
+          hasError = true
+        }
+      })
+      if (formData.skillSets.length === 0) {
+        setFieldErrors(prev => ({ ...prev, skillSets: 'At least one skill set is required' }))
+        hasError = true
+      }
+      if (hasError) {
+        setError('Please fix the errors in the form before proceeding')
+        return
+      }
     }
     
     setCurrentStep(currentStep + 1)
@@ -185,9 +431,9 @@ export default function CandidateRegister() {
     setError(null)
     setSuccess(null)
     
-    const validationError = validateStep3()
-    if (validationError) {
-      setError(validationError)
+    // Validate password fields
+    if (!validateField('password', formData.password) || !validateField('confirmPassword', formData.confirmPassword)) {
+      setError('Please fix the password errors before submitting')
       return
     }
     
@@ -245,6 +491,42 @@ export default function CandidateRegister() {
       setAwaitingOtp(true)
     } catch (err: any) {
       const message = err?.response?.data?.message || err?.message || 'Registration failed'
+      const conflicts = err?.response?.data?.conflicts || []
+      
+      // Handle duplicate field errors
+      if (conflicts.length > 0 || message.includes('already exists') || message.includes('Already registered')) {
+        conflicts.forEach((field: string) => {
+          if (field === 'email' || field === 'primaryEmail') {
+            setFieldErrors(prev => ({ ...prev, primaryEmail: 'This email is already registered' }))
+          } else if (field === 'mobile' || field === 'mobileNumber') {
+            setFieldErrors(prev => ({ ...prev, mobileNumber: 'This mobile number is already registered' }))
+          } else if (field === 'pan' || field === 'panNumber') {
+            setFieldErrors(prev => ({ ...prev, panNumber: 'This PAN number is already registered' }))
+          } else if (field === 'uan' || field === 'uanNumber') {
+            setFieldErrors(prev => ({ ...prev, uanNumber: 'This UAN number is already registered' }))
+          }
+        })
+        
+        // Scroll to first error field
+        const firstErrorField = conflicts[0] || 'primaryEmail'
+        const fieldMap: Record<string, string> = {
+          email: 'primaryEmail',
+          primaryEmail: 'primaryEmail',
+          mobile: 'mobileNumber',
+          mobileNumber: 'mobileNumber',
+          pan: 'panNumber',
+          panNumber: 'panNumber',
+          uan: 'uanNumber',
+          uanNumber: 'uanNumber'
+        }
+        const fieldName = fieldMap[firstErrorField] || 'primaryEmail'
+        const element = document.querySelector(`[name="${fieldName}"], input[placeholder*="${fieldName}"]`)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          ;(element as HTMLElement).focus()
+        }
+      }
+      
       setError(message)
     } finally {
       setIsSubmitting(false)
@@ -346,22 +628,26 @@ export default function CandidateRegister() {
               <input
                 type="text"
             value={formData.firstName}
-            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('firstName', e.target.value)}
+            onBlur={(e) => validateField('firstName', e.target.value)}
+                className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.firstName ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="Enter your first name"
                 required
               />
+              {fieldErrors.firstName && <p className="mt-1 text-xs text-red-600">{fieldErrors.firstName}</p>}
             </div>
             <div>
           <label className="block text-sm font-medium text-gray-700">Last Name *</label>
           <input
             type="text"
             value={formData.lastName}
-            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('lastName', e.target.value)}
+            onBlur={(e) => validateField('lastName', e.target.value)}
+            className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.lastName ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="Enter your last name"
             required
           />
+          {fieldErrors.lastName && <p className="mt-1 text-xs text-red-600">{fieldErrors.lastName}</p>}
         </div>
       </div>
       <div>
@@ -369,11 +655,13 @@ export default function CandidateRegister() {
         <input
           type="text"
           value={formData.fathersName}
-          onChange={(e) => setFormData({ ...formData, fathersName: e.target.value })}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+          onChange={(e) => handleFieldChange('fathersName', e.target.value)}
+          onBlur={(e) => validateField('fathersName', e.target.value)}
+          className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.fathersName ? 'border-red-500' : 'border-gray-300'}`}
           placeholder="Enter father's name"
           required
         />
+        {fieldErrors.fathersName && <p className="mt-1 text-xs text-red-600">{fieldErrors.fathersName}</p>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -381,8 +669,9 @@ export default function CandidateRegister() {
           <label className="block text-sm font-medium text-gray-700">Gender *</label>
           <select
             value={formData.gender}
-            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('gender', e.target.value)}
+            onBlur={(e) => validateField('gender', e.target.value)}
+            className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.gender ? 'border-red-500' : 'border-gray-300'}`}
             required
           >
             <option value="">Select Gender</option>
@@ -390,16 +679,19 @@ export default function CandidateRegister() {
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
+          {fieldErrors.gender && <p className="mt-1 text-xs text-red-600">{fieldErrors.gender}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Date of Birth *</label>
               <input
             type="date"
             value={formData.dob}
-            onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('dob', e.target.value)}
+            onBlur={(e) => validateField('dob', e.target.value)}
+            className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.dob ? 'border-red-500' : 'border-gray-300'}`}
             required
           />
+          {fieldErrors.dob && <p className="mt-1 text-xs text-red-600">{fieldErrors.dob}</p>}
         </div>
       </div>
 
@@ -407,24 +699,28 @@ export default function CandidateRegister() {
         <label className="block text-sm font-medium text-gray-700">Permanent Address *</label>
         <textarea
           value={formData.permanentAddress}
-          onChange={(e) => setFormData({ ...formData, permanentAddress: e.target.value })}
+          onChange={(e) => handleFieldChange('permanentAddress', e.target.value)}
+          onBlur={(e) => validateField('permanentAddress', e.target.value)}
           rows={3}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+          className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.permanentAddress ? 'border-red-500' : 'border-gray-300'}`}
           placeholder="Enter your permanent address"
           required
         />
+        {fieldErrors.permanentAddress && <p className="mt-1 text-xs text-red-600">{fieldErrors.permanentAddress}</p>}
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700">Current Address *</label>
         <textarea
           value={formData.currentAddress}
-          onChange={(e) => setFormData({ ...formData, currentAddress: e.target.value })}
+          onChange={(e) => handleFieldChange('currentAddress', e.target.value)}
+          onBlur={(e) => validateField('currentAddress', e.target.value)}
           rows={3}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.currentAddress ? 'border-red-500' : 'border-gray-300'}`}
           placeholder="Enter your current address"
                 required
               />
+        {fieldErrors.currentAddress && <p className="mt-1 text-xs text-red-600">{fieldErrors.currentAddress}</p>}
             </div>
 
             <div>
@@ -432,11 +728,14 @@ export default function CandidateRegister() {
               <input
                 type="tel"
           value={formData.mobileNumber}
-          onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+          onChange={(e) => handleFieldChange('mobileNumber', e.target.value)}
+          onBlur={(e) => handleFieldBlur('mobileNumber', e.target.value)}
+                className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.mobileNumber ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="+91 98765 43210"
           required
         />
+        {checkingDuplicates.mobileNumber && <p className="mt-1 text-xs text-gray-500">Checking...</p>}
+        {fieldErrors.mobileNumber && <p className="mt-1 text-xs text-red-600">{fieldErrors.mobileNumber}</p>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -445,11 +744,14 @@ export default function CandidateRegister() {
           <input
             type="email"
             value={formData.primaryEmail}
-            onChange={(e) => setFormData({ ...formData, primaryEmail: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('primaryEmail', e.target.value)}
+            onBlur={(e) => handleFieldBlur('primaryEmail', e.target.value)}
+            className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.primaryEmail ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="primary@example.com"
             required
           />
+          {checkingDuplicates.primaryEmail && <p className="mt-1 text-xs text-gray-500">Checking...</p>}
+          {fieldErrors.primaryEmail && <p className="mt-1 text-xs text-red-600">{fieldErrors.primaryEmail}</p>}
           <p className="mt-1 text-xs text-gray-500">OTP verification will be done on this email</p>
         </div>
         <div>
@@ -457,10 +759,12 @@ export default function CandidateRegister() {
           <input
             type="email"
             value={formData.secondaryEmail}
-            onChange={(e) => setFormData({ ...formData, secondaryEmail: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('secondaryEmail', e.target.value)}
+            onBlur={(e) => validateField('secondaryEmail', e.target.value)}
+            className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.secondaryEmail ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="secondary@example.com"
               />
+          {fieldErrors.secondaryEmail && <p className="mt-1 text-xs text-red-600">{fieldErrors.secondaryEmail}</p>}
             </div>
       </div>
     </div>
@@ -479,21 +783,27 @@ export default function CandidateRegister() {
                 <input
                   type="text"
             value={formData.panNumber}
-            onChange={(e) => setFormData({ ...formData, panNumber: e.target.value.toUpperCase() })}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('panNumber', e.target.value.toUpperCase())}
+            onBlur={(e) => handleFieldBlur('panNumber', e.target.value)}
+                  className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.panNumber ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="ABCDE1234F"
                   required
                 />
+        {checkingDuplicates.panNumber && <p className="mt-1 text-xs text-gray-500">Checking...</p>}
+        {fieldErrors.panNumber && <p className="mt-1 text-xs text-red-600">{fieldErrors.panNumber}</p>}
               </div>
               <div>
           <label className="block text-sm font-medium text-gray-700">UAN Number (Optional)</label>
           <input
             type="text"
             value={formData.uanNumber}
-            onChange={(e) => setFormData({ ...formData, uanNumber: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('uanNumber', e.target.value)}
+            onBlur={(e) => handleFieldBlur('uanNumber', e.target.value)}
+            className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.uanNumber ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="123456789012"
           />
+        {checkingDuplicates.uanNumber && <p className="mt-1 text-xs text-gray-500">Checking...</p>}
+        {fieldErrors.uanNumber && <p className="mt-1 text-xs text-red-600">{fieldErrors.uanNumber}</p>}
         </div>
       </div>
 
@@ -502,8 +812,9 @@ export default function CandidateRegister() {
           <label className="block text-sm font-medium text-gray-700">Highest Qualification *</label>
           <select
             value={formData.highestQualification}
-            onChange={(e) => setFormData({ ...formData, highestQualification: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('highestQualification', e.target.value)}
+            onBlur={(e) => validateField('highestQualification', e.target.value)}
+            className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.highestQualification ? 'border-red-500' : 'border-gray-300'}`}
             required
           >
             <option value="">Select Qualification</option>
@@ -511,6 +822,7 @@ export default function CandidateRegister() {
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
+          {fieldErrors.highestQualification && <p className="mt-1 text-xs text-red-600">{fieldErrors.highestQualification}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Work Experience (Years) *</label>
@@ -518,12 +830,15 @@ export default function CandidateRegister() {
             type="number"
             step="0.1"
             min="0"
+            max="50"
             value={formData.workExperience}
-            onChange={(e) => setFormData({ ...formData, workExperience: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('workExperience', e.target.value)}
+            onBlur={(e) => validateField('workExperience', e.target.value)}
+            className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.workExperience ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="2.5"
             required
           />
+          {fieldErrors.workExperience && <p className="mt-1 text-xs text-red-600">{fieldErrors.workExperience}</p>}
         </div>
       </div>
 
@@ -531,8 +846,9 @@ export default function CandidateRegister() {
         <label className="block text-sm font-medium text-gray-700">Sector *</label>
         <select
           value={formData.sector}
-          onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+          onChange={(e) => handleFieldChange('sector', e.target.value)}
+          onBlur={(e) => validateField('sector', e.target.value)}
+          className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.sector ? 'border-red-500' : 'border-gray-300'}`}
           required
         >
           <option value="">Select Sector</option>
@@ -540,6 +856,7 @@ export default function CandidateRegister() {
             <option key={option.value} value={option.value}>{option.label}</option>
           ))}
         </select>
+        {fieldErrors.sector && <p className="mt-1 text-xs text-red-600">{fieldErrors.sector}</p>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -548,22 +865,26 @@ export default function CandidateRegister() {
           <input
             type="text"
             value={formData.presentCompany}
-            onChange={(e) => setFormData({ ...formData, presentCompany: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('presentCompany', e.target.value)}
+            onBlur={(e) => validateField('presentCompany', e.target.value)}
+            className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.presentCompany ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="Company Name"
             required
           />
+          {fieldErrors.presentCompany && <p className="mt-1 text-xs text-red-600">{fieldErrors.presentCompany}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Designation *</label>
           <input
             type="text"
             value={formData.designation}
-            onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('designation', e.target.value)}
+            onBlur={(e) => validateField('designation', e.target.value)}
+            className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.designation ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="Software Engineer"
             required
           />
+          {fieldErrors.designation && <p className="mt-1 text-xs text-red-600">{fieldErrors.designation}</p>}
         </div>
       </div>
 
@@ -573,7 +894,7 @@ export default function CandidateRegister() {
           <input
             type="text"
             value={formData.latestRating}
-            onChange={(e) => setFormData({ ...formData, latestRating: e.target.value })}
+            onChange={(e) => handleFieldChange('latestRating', e.target.value)}
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
             placeholder="Exceeds Expectations"
           />
@@ -583,11 +904,13 @@ export default function CandidateRegister() {
           <input
             type="text"
             value={formData.workLocation}
-            onChange={(e) => setFormData({ ...formData, workLocation: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('workLocation', e.target.value)}
+            onBlur={(e) => validateField('workLocation', e.target.value)}
+            className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.workLocation ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="Bangalore, India"
             required
           />
+          {fieldErrors.workLocation && <p className="mt-1 text-xs text-red-600">{fieldErrors.workLocation}</p>}
         </div>
       </div>
 
@@ -595,8 +918,9 @@ export default function CandidateRegister() {
         <label className="block text-sm font-medium text-gray-700">Open to Relocation *</label>
         <select
           value={formData.openToRelocation}
-          onChange={(e) => setFormData({ ...formData, openToRelocation: e.target.value })}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+          onChange={(e) => handleFieldChange('openToRelocation', e.target.value)}
+          onBlur={(e) => validateField('openToRelocation', e.target.value)}
+          className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.openToRelocation ? 'border-red-500' : 'border-gray-300'}`}
           required
         >
           <option value="">Select Option</option>
@@ -604,6 +928,7 @@ export default function CandidateRegister() {
             <option key={option.value} value={option.value}>{option.label}</option>
           ))}
         </select>
+        {fieldErrors.openToRelocation && <p className="mt-1 text-xs text-red-600">{fieldErrors.openToRelocation}</p>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -612,22 +937,26 @@ export default function CandidateRegister() {
           <input
             type="text"
             value={formData.currentCtc}
-            onChange={(e) => setFormData({ ...formData, currentCtc: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('currentCtc', e.target.value)}
+            onBlur={(e) => validateField('currentCtc', e.target.value)}
+            className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.currentCtc ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="8.5 LPA"
             required
           />
+          {fieldErrors.currentCtc && <p className="mt-1 text-xs text-red-600">{fieldErrors.currentCtc}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Expected Hike % *</label>
                 <input
                   type="text"
             value={formData.expectedHikePercentage}
-            onChange={(e) => setFormData({ ...formData, expectedHikePercentage: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('expectedHikePercentage', e.target.value)}
+            onBlur={(e) => validateField('expectedHikePercentage', e.target.value)}
+            className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.expectedHikePercentage ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="30%"
             required
           />
+          {fieldErrors.expectedHikePercentage && <p className="mt-1 text-xs text-red-600">{fieldErrors.expectedHikePercentage}</p>}
         </div>
       </div>
 
@@ -638,11 +967,13 @@ export default function CandidateRegister() {
             type="number"
             min="0"
             value={formData.noticePeriod}
-            onChange={(e) => setFormData({ ...formData, noticePeriod: e.target.value })}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('noticePeriod', e.target.value)}
+            onBlur={(e) => validateField('noticePeriod', e.target.value)}
+            className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.noticePeriod ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="60"
             required
           />
+          {fieldErrors.noticePeriod && <p className="mt-1 text-xs text-red-600">{fieldErrors.noticePeriod}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Negotiable (Days) *</label>
@@ -650,11 +981,13 @@ export default function CandidateRegister() {
             type="number"
             min="0"
             value={formData.negotiableDays}
-            onChange={(e) => setFormData({ ...formData, negotiableDays: e.target.value })}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+            onChange={(e) => handleFieldChange('negotiableDays', e.target.value)}
+            onBlur={(e) => validateField('negotiableDays', e.target.value)}
+                  className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.negotiableDays ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="30"
             required
                 />
+          {fieldErrors.negotiableDays && <p className="mt-1 text-xs text-red-600">{fieldErrors.negotiableDays}</p>}
               </div>
             </div>
 
@@ -699,6 +1032,7 @@ export default function CandidateRegister() {
             </div>
           )}
         </div>
+        {fieldErrors.skillSets && <p className="mt-1 text-xs text-red-600">{fieldErrors.skillSets}</p>}
         <p className="mt-1 text-xs text-gray-500">Add all applicable skills. Press Enter or click Add to include a skill.</p>
       </div>
     </div>
@@ -717,8 +1051,9 @@ export default function CandidateRegister() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                  onChange={(e) => handleFieldChange('password', e.target.value)}
+                  onBlur={(e) => validateField('password', e.target.value)}
+                  className={`block w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.password ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="Create a password"
                   required
                 />
@@ -726,6 +1061,7 @@ export default function CandidateRegister() {
                   {showPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
                 </button>
               </div>
+              {fieldErrors.password && <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>}
             </div>
 
             <div>
@@ -734,8 +1070,9 @@ export default function CandidateRegister() {
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                  onChange={(e) => handleFieldChange('confirmPassword', e.target.value)}
+                  onBlur={(e) => validateField('confirmPassword', e.target.value)}
+                  className={`block w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm ${fieldErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="Re-enter your password"
                   required
                 />
@@ -743,6 +1080,7 @@ export default function CandidateRegister() {
                   {showConfirmPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
                 </button>
               </div>
+              {fieldErrors.confirmPassword && <p className="mt-1 text-xs text-red-600">{fieldErrors.confirmPassword}</p>}
             </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
