@@ -58,6 +58,8 @@ export default function EmployerRegister() {
   const [isResending, setIsResending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [checkingDuplicates, setCheckingDuplicates] = useState<Record<string, boolean>>({})
 
   const [formData, setFormData] = useState({
     companyName: '',
@@ -71,6 +73,151 @@ export default function EmployerRegister() {
     password: '',
     confirmPassword: ''
   })
+
+  // Check for duplicate email, mobile, PAN
+  const checkDuplicate = async (field: string, value: string) => {
+    if (!value || !value.trim()) return null
+    
+    setCheckingDuplicates(prev => ({ ...prev, [field]: true }))
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/auth/employer/check-duplicate`,
+        { field, value: value.trim() },
+        { headers: { 'Content-Type': 'application/json' } }
+      )
+      if (response.data.exists) {
+        setFieldErrors(prev => ({
+          ...prev,
+          [field]: `${field === 'email' ? 'Email' : field === 'contactNumber' ? 'Mobile number' : 'PAN'} already exists. Please use a different one.`
+        }))
+        return true
+      } else {
+        setFieldErrors(prev => {
+          const newErrors = { ...prev }
+          delete newErrors[field]
+          return newErrors
+        })
+        return false
+      }
+    } catch (err: any) {
+      // If endpoint doesn't exist, skip duplicate check
+      console.log('Duplicate check endpoint not available')
+      return false
+    } finally {
+      setCheckingDuplicates(prev => ({ ...prev, [field]: false }))
+    }
+  }
+
+  // Real-time field validation
+  const validateField = (field: string, value: string) => {
+    const trimmedValue = value.trim()
+    let error = ''
+
+    switch (field) {
+      case 'companyName':
+        if (!trimmedValue) error = 'Company name is required'
+        break
+      case 'address':
+        if (!trimmedValue) error = 'Company address is required'
+        break
+      case 'panNumber':
+        if (!trimmedValue) {
+          error = 'PAN number is required'
+        } else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i.test(trimmedValue)) {
+          error = 'Enter a valid PAN number (e.g., ABCDE1234F)'
+        }
+        break
+      case 'hrFirstName':
+        if (!trimmedValue) error = 'First name is required'
+        break
+      case 'hrLastName':
+        if (!trimmedValue) error = 'Last name is required'
+        break
+      case 'designation':
+        if (!trimmedValue) error = 'Designation is required'
+        break
+      case 'contactNumber':
+        if (!trimmedValue) {
+          error = 'Mobile number is required'
+        } else if (!/^[0-9+\-()\s]{7,20}$/.test(trimmedValue)) {
+          error = 'Enter a valid mobile number (7-20 digits)'
+        }
+        break
+      case 'email':
+        if (!trimmedValue) {
+          error = 'Corporate email is required'
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedValue)) {
+          error = 'Enter a valid email address'
+        } else if (!isCorporateEmail(trimmedValue)) {
+          error = 'Please use your corporate work email (e.g., name@yourcompany.com)'
+        }
+        break
+      case 'password':
+        if (!value) {
+          error = 'Password is required'
+        } else if (value.length < 6) {
+          error = 'Password must be at least 6 characters'
+        }
+        break
+      case 'confirmPassword':
+        if (!value) {
+          error = 'Please confirm your password'
+        } else if (value !== formData.password) {
+          error = 'Passwords do not match'
+        }
+        break
+    }
+
+    if (error) {
+      setFieldErrors(prev => ({ ...prev, [field]: error }))
+    } else {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
+    }
+
+    return !error
+  }
+
+  // Handle field change with validation
+  const handleFieldChange = (field: string, value: string) => {
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value }
+      // If password changes, re-validate confirmPassword
+      if (field === 'password' && prev.confirmPassword) {
+        if (prev.confirmPassword !== value) {
+          setFieldErrors(prevErrors => ({ ...prevErrors, confirmPassword: 'Passwords do not match' }))
+        } else {
+          setFieldErrors(prevErrors => {
+            const newErrors = { ...prevErrors }
+            delete newErrors.confirmPassword
+            return newErrors
+          })
+        }
+      }
+      return newData
+    })
+    setError(null)
+    
+    // Validate immediately
+    validateField(field, value)
+  }
+
+  // Handle field blur with duplicate check
+  const handleFieldBlur = async (field: string, value: string) => {
+    validateField(field, value)
+    
+    // Check duplicates for specific fields
+    if (field === 'email' && value.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()) && isCorporateEmail(value.trim())) {
+      await checkDuplicate('email', value)
+    } else if (field === 'contactNumber' && value.trim() && /^[0-9+\-()\s]{7,20}$/.test(value.trim())) {
+      await checkDuplicate('contactNumber', value)
+    } else if (field === 'panNumber' && value.trim() && /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i.test(value.trim())) {
+      await checkDuplicate('panNumber', value)
+    }
+  }
 
   const validate = () => {
     if (!formData.companyName.trim()) return 'Company name is required'
@@ -93,6 +240,22 @@ export default function EmployerRegister() {
     e.preventDefault()
     setError(null)
     setSuccess(null)
+    
+    // Validate all fields before submitting
+    const fields = ['companyName', 'address', 'panNumber', 'hrFirstName', 'hrLastName', 'designation', 'contactNumber', 'email', 'password', 'confirmPassword']
+    let hasError = false
+    fields.forEach(field => {
+      const value = formData[field as keyof typeof formData] as string
+      if (!validateField(field, value || '')) {
+        hasError = true
+      }
+    })
+    
+    if (hasError) {
+      setError('Please fix the errors in the form before submitting')
+      return
+    }
+    
     const validationError = validate()
     if (validationError) {
       setError(validationError)
@@ -130,6 +293,38 @@ export default function EmployerRegister() {
       return data
     } catch (err: any) {
       const message = err?.response?.data?.message || err?.message || 'Registration failed'
+      const conflicts = err?.response?.data?.conflicts || []
+      
+      // Handle duplicate field errors
+      if (conflicts.length > 0 || message.includes('already exists') || message.includes('Already registered')) {
+        conflicts.forEach((field: string) => {
+          if (field === 'email') {
+            setFieldErrors(prev => ({ ...prev, email: 'This email is already registered' }))
+          } else if (field === 'mobile' || field === 'contactNumber' || field === 'phone') {
+            setFieldErrors(prev => ({ ...prev, contactNumber: 'This mobile number is already registered' }))
+          } else if (field === 'pan' || field === 'panNumber') {
+            setFieldErrors(prev => ({ ...prev, panNumber: 'This PAN number is already registered' }))
+          }
+        })
+        
+        // Scroll to first error field
+        const firstErrorField = conflicts[0] || 'email'
+        const fieldMap: Record<string, string> = {
+          email: 'email',
+          mobile: 'contactNumber',
+          contactNumber: 'contactNumber',
+          phone: 'contactNumber',
+          pan: 'panNumber',
+          panNumber: 'panNumber'
+        }
+        const fieldName = fieldMap[firstErrorField] || 'email'
+        const element = document.getElementById(fieldName)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          element.focus()
+        }
+      }
+      
       setError(message)
     } finally {
       setIsSubmitting(false)
@@ -225,7 +420,7 @@ export default function EmployerRegister() {
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">
-                Company Name
+                Company Name *
               </label>
               <input
                 id="companyName"
@@ -233,15 +428,17 @@ export default function EmployerRegister() {
                 type="text"
                 required
                 value={formData.companyName}
-                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
+                onChange={(e) => handleFieldChange('companyName', e.target.value)}
+                onBlur={(e) => validateField('companyName', e.target.value)}
+                className={`mt-1 appearance-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm ${fieldErrors.companyName ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="Your Company Pvt Ltd"
               />
+              {fieldErrors.companyName && <p className="mt-1 text-xs text-red-600">{fieldErrors.companyName}</p>}
             </div>
 
             <div>
               <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                Company Address
+                Company Address *
               </label>
               <textarea
                 id="address"
@@ -249,15 +446,17 @@ export default function EmployerRegister() {
                 required
                 rows={3}
                 value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
+                onChange={(e) => handleFieldChange('address', e.target.value)}
+                onBlur={(e) => validateField('address', e.target.value)}
+                className={`mt-1 appearance-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm ${fieldErrors.address ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="Complete company address with city, state, and pincode"
               />
+              {fieldErrors.address && <p className="mt-1 text-xs text-red-600">{fieldErrors.address}</p>}
             </div>
 
             <div>
               <label htmlFor="panNumber" className="block text-sm font-medium text-gray-700">
-                PAN Number of the Company
+                PAN Number of the Company *
               </label>
               <input
                 id="panNumber"
@@ -265,17 +464,20 @@ export default function EmployerRegister() {
                 type="text"
                 required
                 value={formData.panNumber}
-                onChange={(e) => setFormData({ ...formData, panNumber: e.target.value.toUpperCase() })}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm uppercase"
+                onChange={(e) => handleFieldChange('panNumber', e.target.value.toUpperCase())}
+                onBlur={(e) => handleFieldBlur('panNumber', e.target.value)}
+                className={`mt-1 appearance-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm uppercase ${fieldErrors.panNumber ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="ABCDE1234F"
                 maxLength={10}
               />
+              {checkingDuplicates.panNumber && <p className="mt-1 text-xs text-gray-500">Checking...</p>}
+              {fieldErrors.panNumber && <p className="mt-1 text-xs text-red-600">{fieldErrors.panNumber}</p>}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="hrFirstName" className="block text-sm font-medium text-gray-700">
-                  Your First Name
+                  Your First Name *
                 </label>
                 <input
                   id="hrFirstName"
@@ -283,14 +485,16 @@ export default function EmployerRegister() {
                   type="text"
                   required
                   value={formData.hrFirstName}
-                  onChange={(e) => setFormData({ ...formData, hrFirstName: e.target.value })}
-                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
+                  onChange={(e) => handleFieldChange('hrFirstName', e.target.value)}
+                  onBlur={(e) => validateField('hrFirstName', e.target.value)}
+                  className={`mt-1 appearance-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm ${fieldErrors.hrFirstName ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="Suresh"
                 />
+                {fieldErrors.hrFirstName && <p className="mt-1 text-xs text-red-600">{fieldErrors.hrFirstName}</p>}
               </div>
               <div>
                 <label htmlFor="hrLastName" className="block text-sm font-medium text-gray-700">
-                  Your Last Name
+                  Your Last Name *
                 </label>
                 <input
                   id="hrLastName"
@@ -298,14 +502,16 @@ export default function EmployerRegister() {
                   type="text"
                   required
                   value={formData.hrLastName}
-                  onChange={(e) => setFormData({ ...formData, hrLastName: e.target.value })}
-                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
+                  onChange={(e) => handleFieldChange('hrLastName', e.target.value)}
+                  onBlur={(e) => validateField('hrLastName', e.target.value)}
+                  className={`mt-1 appearance-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm ${fieldErrors.hrLastName ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="Nair"
                 />
+                {fieldErrors.hrLastName && <p className="mt-1 text-xs text-red-600">{fieldErrors.hrLastName}</p>}
               </div>
               <div className="sm:col-span-2">
                 <label htmlFor="designation" className="block text-sm font-medium text-gray-700">
-                  Designation
+                  Designation *
                 </label>
                 <input
                   id="designation"
@@ -313,16 +519,18 @@ export default function EmployerRegister() {
                   type="text"
                   required
                   value={formData.designation}
-                  onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
+                  onChange={(e) => handleFieldChange('designation', e.target.value)}
+                  onBlur={(e) => validateField('designation', e.target.value)}
+                  className={`mt-1 appearance-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm ${fieldErrors.designation ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="HR Manager"
                 />
+                {fieldErrors.designation && <p className="mt-1 text-xs text-red-600">{fieldErrors.designation}</p>}
               </div>
             </div>
 
             <div>
               <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-700">
-                Mobile Number
+                Mobile Number *
               </label>
               <input
                 id="contactNumber"
@@ -330,15 +538,18 @@ export default function EmployerRegister() {
                 type="tel"
                 required
                 value={formData.contactNumber}
-                onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
+                onChange={(e) => handleFieldChange('contactNumber', e.target.value)}
+                onBlur={(e) => handleFieldBlur('contactNumber', e.target.value)}
+                className={`mt-1 appearance-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm ${fieldErrors.contactNumber ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="+91 98765 43210"
               />
+              {checkingDuplicates.contactNumber && <p className="mt-1 text-xs text-gray-500">Checking...</p>}
+              {fieldErrors.contactNumber && <p className="mt-1 text-xs text-red-600">{fieldErrors.contactNumber}</p>}
             </div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Corporate Mail ID
+                Corporate Mail ID *
               </label>
               <input
                 id="email"
@@ -347,15 +558,18 @@ export default function EmployerRegister() {
                 autoComplete="email"
                 required
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
+                onChange={(e) => handleFieldChange('email', e.target.value)}
+                onBlur={(e) => handleFieldBlur('email', e.target.value)}
+                className={`mt-1 appearance-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm ${fieldErrors.email ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="hr@yourcompany.com"
               />
+              {checkingDuplicates.email && <p className="mt-1 text-xs text-gray-500">Checking...</p>}
+              {fieldErrors.email && <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>}
             </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+                Password *
               </label>
               <div className="mt-1 relative">
                 <input
@@ -365,8 +579,9 @@ export default function EmployerRegister() {
                   autoComplete="new-password"
                   required
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
+                  onChange={(e) => handleFieldChange('password', e.target.value)}
+                  onBlur={(e) => validateField('password', e.target.value)}
+                  className={`appearance-none relative block w-full px-3 py-2 pr-10 border placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm ${fieldErrors.password ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="Create a password"
                 />
                 <button
@@ -381,11 +596,12 @@ export default function EmployerRegister() {
                   )}
                 </button>
               </div>
+              {fieldErrors.password && <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>}
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
+                Confirm Password *
               </label>
               <div className="mt-1 relative">
                 <input
@@ -395,8 +611,9 @@ export default function EmployerRegister() {
                   autoComplete="new-password"
                   required
                   value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
+                  onChange={(e) => handleFieldChange('confirmPassword', e.target.value)}
+                  onBlur={(e) => validateField('confirmPassword', e.target.value)}
+                  className={`appearance-none relative block w-full px-3 py-2 pr-10 border placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm ${fieldErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="Re-enter your password"
                 />
                 <button
@@ -411,6 +628,7 @@ export default function EmployerRegister() {
                   )}
                 </button>
               </div>
+              {fieldErrors.confirmPassword && <p className="mt-1 text-xs text-red-600">{fieldErrors.confirmPassword}</p>}
             </div>
 
             <div>
